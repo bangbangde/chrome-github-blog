@@ -20,6 +20,21 @@ module.exports = {
 		filename: '[name].bundle.js',
 		path: path.resolve(__dirname, 'dist', 'js')
 	},
+	module: {
+		rules: [
+			{
+				test: /\.css$/,
+				use: ["style-loader", "css-loader"]
+			},
+			{
+				test: /\.(js|jsx)$/,
+				exclude: /node_modules/,
+				options: {presets: ["@babel/env"]}
+			}
+		]
+	},
+	resolve: { extensions: ["*", ".js", ".jsx"] },
+
 	plugins: [
 		new CleanWebpackPlugin(),
 		...htmlWebpackPlugins
