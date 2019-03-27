@@ -1,6 +1,7 @@
 const path = require('path');
 const CleanWebpackPlugin = require('clean-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin')
 
 /////////////////////////////入口处理///////////////////////////////////////
 // chrome 扩展四件套
@@ -25,9 +26,6 @@ module.exports = {
 	output: {
 		filename: 'js/[name].[chunkhash].js',
 		path: path.resolve(__dirname, 'dist')
-	},
-	options: {
-		
 	},
 	module: {
 		rules: [
@@ -56,7 +54,8 @@ module.exports = {
 		...htmlWebpackPlugins,
 		new HtmlWebpackPlugin({
 			template: path.join(__dirname, 'src', 'index.html'),
-			chunks: null
-		})
+			chunks: []
+		}),
+		new CopyWebpackPlugin([ 'src/manifest.json' ])
 	]
 };
