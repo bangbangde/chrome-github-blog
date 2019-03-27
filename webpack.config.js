@@ -17,8 +17,11 @@ module.exports = {
 	mode: process.env.NODE_ENV || 'development',
 	entry,
 	output: {
-		filename: '[name].bundle.js',
+		filename: '[name].[chunkhash].js',
 		path: path.resolve(__dirname, 'dist', 'js')
+	},
+	options: {
+		
 	},
 	module: {
 		rules: [
@@ -29,12 +32,11 @@ module.exports = {
 			{
 				test: /\.(js|jsx)$/,
 				exclude: /node_modules/,
+				loader:'babel-loader',
 				options: {presets: ["@babel/env"]}
 			}
 		]
 	},
-	resolve: { extensions: ["*", ".js", ".jsx"] },
-
 	plugins: [
 		new CleanWebpackPlugin(),
 		...htmlWebpackPlugins
