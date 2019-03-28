@@ -342,3 +342,4 @@ devServer: {
 ```
 > devServer 编译结束后会将 bundle 保持在内存中，不会写到任何输出文件。
 > 更改任何源文件并保存，devServer会自动编译后重新加载。
+> ps. 如果 contentBase 目录下没有index.html，打开浏览器会看到目录结构。经过观察发现这些都是本地文件，不是内存中的数据。内存中的 bundle 目录是访问不了的。

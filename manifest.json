@@ -1,0 +1,21 @@
+{
+	"name": "BlogHub",
+	"version": "0.0.1",
+	"manifest_version": 2,
+
+	"description": "在 chrome extension 中管理你的 GitHub page，打造触手可达的写作环境",
+	"icons": {
+    "16": "assets/images/blog16.png",
+    "32": "assets/images/blog32.png",
+    "48": "assets/images/blog48.png",
+    "128": "assets/images/blog128.png"
+	},
+	
+	"background": {
+		"scripts": ["js/background.js"],
+		"persistent": false
+	},
+	"browser_action": {},
+	"options_page": "options.html",
+	"permissions": ["activeTab", "declarativeContent", "storage"]
+}

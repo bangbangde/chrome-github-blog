@@ -1,7 +1,6 @@
-import Popup from '../popup/index.js';
-import './index.css';
 import React from 'react';
 import ReactDom from 'react-dom';
+import './index.css';
 
 ReactDom.render((
 		<div>

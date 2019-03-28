@@ -3,28 +3,16 @@ const CleanWebpackPlugin = require('clean-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin')
 
-/////////////////////////////入口处理///////////////////////////////////////
-// chrome 扩展四件套
-let entries = ['newTab', 'popup', 'options', 'background'];
-
-let entry = {}, 
-		htmlWebpackPlugins = entries.map(name => {
-			// js
-			entry[name] = path.join(__dirname, 'src', 'pages', name, 'index.js');
-			// html
-			return new HtmlWebpackPlugin({
-				template: path.join(__dirname, 'src', 'pages', name, 'index.html'),
-				filename: path.join(__dirname, 'dist', name + '.html'),
-				chunks: [name],
-			})
-		});
-//////////////////////////////////////////////////////////////////////////
-
 module.exports = {
 	mode: process.env.NODE_ENV || 'development',
-	entry,
+	entry: {
+		newTab: path.join(__dirname, 'src', 'pages', 'newTab', 'index.js'),
+		popup: path.join(__dirname, 'src', 'pages', 'popup', 'index.js'),
+		options: path.join(__dirname, 'src', 'pages', 'options', 'index.js'),
+		background: path.join(__dirname, 'src', 'background.js'),
+	},
 	output: {
-		filename: 'js/[name].[chunkhash].js',
+		filename: 'js/[name].js',
 		path: path.resolve(__dirname, 'dist')
 	},
 	module: {
@@ -51,11 +39,16 @@ module.exports = {
 	},
 	plugins: [
 		new CleanWebpackPlugin(),
-		...htmlWebpackPlugins,
-		new HtmlWebpackPlugin({
-			template: path.join(__dirname, 'src', 'index.html'),
-			chunks: []
-		}),
-		new CopyWebpackPlugin([ 'src/manifest.json' ])
+		...['newTab', 'popup', 'options'].map(name =>
+			new HtmlWebpackPlugin({
+				template: path.join(__dirname, 'src', 'pages', name, 'index.html'),
+				filename: path.join(__dirname, 'dist', name + '.html'),
+				chunks: [name],
+			})
+		),
+		new CopyWebpackPlugin([
+			'manifest.json',
+			{from: 'assets', to: 'assets'}
+		],{copyUnmodified: true})// 因为每次都会清理dist，所以要强制复制所有文件
 	]
 };
