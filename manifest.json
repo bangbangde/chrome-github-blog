@@ -17,5 +17,12 @@
 	},
 	"browser_action": {},
 	"options_page": "options.html",
-	"permissions": ["activeTab", "declarativeContent", "storage"]
+	"permissions": [
+		"tabs", "http://*/",
+		"https://*/",
+		"webNavigation",
+		"activeTab", 
+		"declarativeContent", 
+		"storage"
+	]
 }

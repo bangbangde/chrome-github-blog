@@ -23,5 +23,35 @@ export default {
     onChange(callback){
       chrome.storage.onChanged.addListener(callback);
     }
+  },
+
+  toQueryString(data){
+    return '?' + Object.keys(data).map(key => encodeURI(key)+'='+encodeURIComponent(JSON.stringify(data[key]))).join('&');
+  },
+  
+  request({ 
+    url, data, success, fail, complete, 
+    method='GET', async=true,
+    headers = {
+      'content-Type': 'application/x-www-form-urlencode'
+    }}){
+    let xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function(){
+      console.log(xhr)
+    }
+    if(data && method.toLocaleLowerCase() == 'get'){
+      url += this.toQueryString(data)
+    }
+    xhr.open(method, url, async);
+    Object.keys(headers).forEach(key => {
+      xhr.setRequestHeader(key, headers[key]);
+    })
+    xhr.send(data)
+    return {
+      abort(){
+        xhr.abort();
+        xhr = null;
+      }
+    }
   }
 }

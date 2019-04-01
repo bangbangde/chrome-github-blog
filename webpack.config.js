@@ -1,16 +1,15 @@
 const path = require('path');
+const Entry = require('./build/entries');
 const CleanWebpackPlugin = require('clean-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin')
 
+let entry = Entry.entries();
+let htmlPlugins = Entry.htmlPlugins();
+
 module.exports = {
 	mode: process.env.NODE_ENV || 'development',
-	entry: {
-		newTab: path.join(__dirname, 'src', 'pages', 'newTab', 'index.js'),
-		popup: path.join(__dirname, 'src', 'pages', 'popup', 'index.js'),
-		options: path.join(__dirname, 'src', 'pages', 'options', 'index.js'),
-		background: path.join(__dirname, 'src', 'background.js'),
-	},
+	entry,
 	output: {
 		filename: 'js/[name].js',
 		path: path.resolve(__dirname, 'dist')
@@ -39,16 +38,15 @@ module.exports = {
 	},
 	plugins: [
 		new CleanWebpackPlugin(),
-		...['newTab', 'popup', 'options'].map(name =>
-			new HtmlWebpackPlugin({
-				template: path.join(__dirname, 'src', 'pages', name, 'index.html'),
-				filename: path.join(__dirname, 'dist', name + '.html'),
-				chunks: [name],
-			})
-		),
+		...htmlPlugins,
 		new CopyWebpackPlugin([
 			'manifest.json',
 			{from: 'assets', to: 'assets'}
 		],{copyUnmodified: true})// 因为每次都会清理dist，所以要强制复制所有文件
-	]
+	],
+	// optimization: {
+	// 	splitChunks: {
+	// 		chunks: 'all'
+	// 	}
+	// }
 };
