@@ -10,9 +10,9 @@
     "48": "assets/images/blog48.png",
     "128": "assets/images/blog128.png"
 	},
-	
+
 	"background": {
-		"scripts": ["js/background.js"],
+		"page": "background.html",
 		"persistent": false
 	},
 	"browser_action": {},
@@ -21,8 +21,8 @@
 		"tabs", "http://*/",
 		"https://*/",
 		"webNavigation",
-		"activeTab", 
-		"declarativeContent", 
+		"activeTab",
+		"declarativeContent",
 		"storage"
 	]
 }

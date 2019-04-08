@@ -12,7 +12,6 @@ function entries () {
     fs.readdirSync('src/contentJS').forEach(name => {
         entries[path.join(path.basename(name, '.js'))] = path.resolve('./src', 'contentJS', name);
     });
-    entries.background = path.resolve('./src', 'background.js');
     return entries;
 }
 
@@ -21,7 +20,7 @@ function htmlPlugins() {
         let param = {
             template: path.resolve('./src', 'pages', name, 'index.html'),
             filename: path.join('./', name + '.html'),
-            chunks: [path.join(name), 'vendors'],
+            chunks: ['runtime', 'vendors', path.join(name)],
         };
         try {
             fs.accessSync(param.template)

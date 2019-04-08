@@ -1,7 +1,6 @@
 const path = require('path');
 const Entry = require('./build/entries');
 const CleanWebpackPlugin = require('clean-webpack-plugin');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin')
 
 let entry = Entry.entries();
@@ -44,9 +43,17 @@ module.exports = {
 			{from: 'assets', to: 'assets'}
 		],{copyUnmodified: true})// 因为每次都会清理dist，所以要强制复制所有文件
 	],
-	// optimization: {
-	// 	splitChunks: {
-	// 		chunks: 'all'
-	// 	}
-	// }
+	optimization: {
+		runtimeChunk: 'single',
+		splitChunks: {
+			chunks: "all",
+			cacheGroups: {
+				vendors: {
+					test: /[\\/]node_modules[\\/]/,
+					name: 'vendors',
+					reuseExistingChunk: true
+				}
+			}
+		}
+	}
 };
