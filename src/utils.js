@@ -1,57 +1,34 @@
-export default {
-  storage:{
-    /**
-     * sync: true:自动同步到其它设备, false:仅存在本地
-     */
-    set: (obj, sync = true) => new Promise((resolve, reject) => {
-      let method = sync?'sync':'local';
-      chrome.storage[method].set(obj, function(){
-        resolve();
-      });
-    }),
-    get: (keys, sync = true) => new Promise((resolve, reject) => {
-      let method = sync?'sync':'local';
-      chrome.storage[method].get(keys, function(items){
-        resolve(items)
-      })
-    }),
-    /**
-     * 
-     * @param {*} callback(change) | change: {oldValue, newValue}
-     * 
-     */
-    onChange(callback){
-      chrome.storage.onChanged.addListener(callback);
+/**
+ * promise 风格转化，仅用于 Chrome extension API
+ *
+ * @param {Function} fn 异步 Chrome extension API
+ * @param {Object} area 上下文对象，针对 chrome.storage 下的 get、set 等方法
+ * @returns {function(...[*]): Promise<any>}
+ */
+let promisify = (fn, area) => function (...args) {
+  return new Promise((resolve, reject) => {
+    let callback = function (...args) {
+      resolve(...args);
     }
-  },
+    fn.apply(area || null, [...args, callback])
+  });
+};
 
-  toQueryString(data){
-    return '?' + Object.keys(data).map(key => encodeURI(key)+'='+encodeURIComponent(JSON.stringify(data[key]))).join('&');
-  },
-  
-  request({ 
-    url, data, success, fail, complete, 
-    method='GET', async=true,
-    headers = {
-      'content-Type': 'application/x-www-form-urlencode'
-    }}){
-    let xhr = new XMLHttpRequest();
-    xhr.onreadystatechange = function(){
-      console.log(xhr)
+let Store = {
+  set: promisify(chrome.storage.sync.set, chrome.storage.sync),
+  get: promisify(chrome.storage.sync.get, chrome.storage.sync),
+  remove: promisify(chrome.storage.sync.remove, chrome.storage.sync),
+  clear: promisify(chrome.storage.sync.clear, chrome.storage.sync),
+  change: fn => chrome.storage.sync.onChanged.addListener(fn),
+  log: () => chrome.storage.onChanged.addListener(changes => {
+    for (let key in changes) {
+      let storageChange = changes[key];
+      console.log('Store:log: "%s" changed from "%s" to "%s".', key, storageChange.oldValue, storageChange.newValue);
     }
-    if(data && method.toLocaleLowerCase() == 'get'){
-      url += this.toQueryString(data)
-    }
-    xhr.open(method, url, async);
-    Object.keys(headers).forEach(key => {
-      xhr.setRequestHeader(key, headers[key]);
-    })
-    xhr.send(data)
-    return {
-      abort(){
-        xhr.abort();
-        xhr = null;
-      }
-    }
-  }
+  })
+};
+
+
+export {
+  promisify, Store
 }

@@ -1,21 +1,11 @@
 import React from 'react';
 import ReactDom from 'react-dom';
-import Utils from '../../utils';
+import Option from "@/views/option/index";
 
+let container = document.createElement('div');
+document.body.appendChild(container);
 ReactDom.render((
 <div>
-    <h1>options</h1>
+    <Option></Option>
 </div>
-), document.getElementById('root'));
-
-document.getElementById('ajax').addEventListener('click', () => {
-    Utils.request({
-        url: 'https://api.github.com/users/octocat/orgs',
-        headers: {
-            Accept: 'application/vnd.github.v3+json'
-        },
-        data: {
-            user: 'cqbyte'
-        }
-    })
-})
+), container);

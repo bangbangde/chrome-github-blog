@@ -9,8 +9,8 @@ function entries () {
     pages.forEach(name => {
         entries[path.join(name)] = path.resolve('./src', 'pages', name, 'index.js');
     });
-    fs.readdirSync('src/contentJS').forEach(name => {
-        entries[path.join(path.basename(name, '.js'))] = path.resolve('./src', 'contentJS', name);
+    fs.readdirSync('src/content-js').forEach(name => {
+        entries[path.join(path.basename(name, '.js'))] = path.resolve('./src', 'content-js', name);
     });
     return entries;
 }
@@ -20,6 +20,10 @@ function htmlPlugins() {
         let param = {
             template: path.resolve('./src', 'pages', name, 'index.html'),
             filename: path.join('./', name + '.html'),
+            // favicon: '',
+            meta: {
+                viewport: 'minimum-scale=1, initial-scale=1, width=device-width, shrink-to-fit=no'
+            },
             chunks: ['runtime', 'vendors', path.join(name)],
         };
         try {

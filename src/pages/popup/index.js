@@ -1,8 +1,8 @@
 import React from 'react';
 import ReactDom from 'react-dom';
 
+let container = document.createElement('div');
+document.body.appendChild(container);
 ReactDom.render((
-		<div>
-			<h1>popup</h1>
-		</div>
-), document.getElementById('root'));
+	<div>popup</div>
+), container);

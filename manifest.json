@@ -17,6 +17,11 @@
 	},
 	"browser_action": {},
 	"options_page": "options.html",
+	"options_ui": {
+		"page": "options.html",
+		"open_in_tab": true,
+		"chrome_style": true
+	},
 	"permissions": [
 		"tabs", "http://*/",
 		"https://*/",

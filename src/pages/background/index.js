@@ -1,51 +1,45 @@
-import Util from '../../utils';
+import {promisify, Store} from '../../utils';
 
-// background.js
-chrome.runtime.onInstalled.addListener(init);
+const Background = {
+	data: {},
 
-chrome.webNavigation.onDOMContentLoaded.addListener(function(info) {
-	Util.storage.get('OAUTH_PAGE').then(data => {
-		if(data.OAUTH_PAGE && info.url.startsWith(data.OAUTH_PAGE)){
-			console.log('inject', info.url)
-			chrome.tabs.executeScript(null, {file: "./js/runtime.js"})
-			chrome.tabs.executeScript(null, {file: "./js/vendors.js"})
-			chrome.tabs.executeScript(null, {file: "./js/oauth.js"})
-		}else{
-			console.log('no inject', info.url)
+	init(){
+		chrome.runtime.onInstalled.addListener(this.onInstallHandler);
+	},
+
+	async onInstallHandler(){
+		console.log("ext:installed", Date());
+		let info = await promisify(chrome.management.getSelf)();
+		if(info.installType == 'development'){
+			await Store.clear();
+			Store.log();
+			await Store.set({
+				clientId: '91ed6a43c5964d91a6e6',
+				callbackUrl: 'callback://oauth-code',
+				oauthUrl: 'https://cqbyte.github.io/oauth-helper/',
+				accessToken: '',
+				code: '',
+			});
 		}
-	})
-});
+		Store.change(function (changes) {
+			changes.forEach((key, item) => {
+				this.data[key] = item.newValue;
+			})
+		})
+		Background.data = await Store.get();
+		Background.setBrowserAction();
+	},
 
-
-/**
- * 初始化
- */
-function init(){
-	console.log("ext:installed", Date());
-	mockStore();
-	Util.storage.get(null).then(data => console.log('获取数据：', data));
-	setBrowserAction();
-}
-/**
- * 设置 BrowserAction
- */
-function setBrowserAction(enable = true){
-	if(enable){
-		chrome.browserAction.setPopup({popup: ''});
-		chrome.browserAction.onClicked.addListener(tab => {
-			console.log('clicked')
-			chrome.tabs.create({
-			  url: 'https://cqbyte.github.io/oauth-helper/'
-			}, tab => {})
-		});
-	}else{
-		chrome.browserAction.setPopup({popup: 'popup.html?flag=0'});
+	setBrowserAction(){
+		if(this.data.accessToken){
+			chrome.browserAction.setPopup({popup: 'popup.html'});
+		}else{
+			chrome.browserAction.setPopup({popup: ''});
+			chrome.browserAction.onClicked.addListener(tab => {
+				chrome.runtime.openOptionsPage();
+			});
+		}
 	}
 }
 
-function mockStore(){
-	Util.storage.set({
-		'GITHUB_APPID': '000000000000',
-		'OAUTH_PAGE': 'https://cqbyte.github.io/oauth-helper/'
-	});
-}
+Background.init();

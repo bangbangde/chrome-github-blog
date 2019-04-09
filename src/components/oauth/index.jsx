@@ -23,7 +23,7 @@ class OAuth extends React.Component {
     getCode(){
         location.href = 'https://github.com/login/oauth/authorize?' + qs.stringify({
             client_id: '91ed6a43c5964d91a6e6',
-            redirect_uri: 'https://cqbyte.github.io/oauth-helper/',
+            redirect_uri: 'callback://oauth-code',
             scope: 'user',
             state: '1234',
         }, {encode: false});
@@ -33,7 +33,7 @@ class OAuth extends React.Component {
             client_id: '91ed6a43c5964d91a6e6',
             client_secret: 'b59832960c642ade343cdb205f72dd5a47a8b0d1',
             code,
-            redirect_uri: 'https://cqbyte.github.io/oauth-helper/',
+            redirect_uri: 'callback://oauth-code',
             state: '1234'
         }).then(res => {
             this.setState({accessToken: res.data})

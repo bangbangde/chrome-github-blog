@@ -22,12 +22,7 @@ module.exports = {
 			{
 				test: /\.(js|jsx)$/,
 				exclude: /(node_modules|bower_components)/,
-				use: {
-					loader: 'babel-loader',
-					options: {
-						presets: ['@babel/preset-env', "@babel/preset-react"]
-					}
-				}
+				loader: 'babel-loader'
 			}
 		]
 	},
@@ -43,6 +38,12 @@ module.exports = {
 			{from: 'assets', to: 'assets'}
 		],{copyUnmodified: true})// 因为每次都会清理dist，所以要强制复制所有文件
 	],
+	resolve: {
+		extensions: ['.js', '.jsx'],
+		alias: {
+			'@': path.resolve('src')
+		}
+	},
 	optimization: {
 		runtimeChunk: 'single',
 		splitChunks: {
