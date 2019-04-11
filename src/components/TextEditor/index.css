@@ -1,0 +1,8 @@
+.wrapper-editor {}
+#text-editor {
+    width: 100%; height: 100%; overflow: auto; border: none; background-color: transparent;
+    color: #b3b3b3; font-family: Georgia,Times New Roman,Times,Songti SC,serif;
+    padding: 40px 40px 80px; font-size: 18px; font-weight: 400; line-height: 30px;
+    white-space: pre-wrap; box-sizing: border-box; resize: none;
+}
+#text-editor:focus {-webkit-appearance: none; outline: none;}

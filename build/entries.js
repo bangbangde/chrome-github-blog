@@ -7,7 +7,7 @@ let pages = fs.readdirSync('src/pages');
 function entries () {
     let entries = {};
     pages.forEach(name => {
-        entries[path.join(name)] = path.resolve('./src', 'pages', name, 'index.js');
+        entries[path.join(path.basename(name, '.js'))] = path.resolve('./src', 'pages', name);
     });
     fs.readdirSync('src/content-js').forEach(name => {
         entries[path.join(path.basename(name, '.js'))] = path.resolve('./src', 'content-js', name);
@@ -17,14 +17,14 @@ function entries () {
 
 function htmlPlugins() {
     return pages.map(name =>{
+        name = path.basename(name, '.js');
         let param = {
-            template: path.resolve('./src', 'pages', name, 'index.html'),
-            filename: path.join('./', name + '.html'),
+            filename: name + '.html',
             // favicon: '',
             meta: {
                 viewport: 'minimum-scale=1, initial-scale=1, width=device-width, shrink-to-fit=no'
             },
-            chunks: ['runtime', 'vendors', path.join(name)],
+            chunks: ['runtime', 'vendors', name],
         };
         try {
             fs.accessSync(param.template)

@@ -25,23 +25,23 @@ project
 ```
 webpack-demo
 |-src
-  |-index.js
+  |-index.jsx
 ```
 config
 ```js
 // __dirname: /Users/Frank/webpack-demo/
 context: __dirname,
 entry: {
-  index: './src/index.js'
+  index: './src/index.jsx'
 }
 ```
-上面是webpack的默认配置，意思是在当前目录查找 './src/index.js'。
+上面是webpack的默认配置，意思是在当前目录查找 './src/index.jsx'。
 
 下面尝试改一下 context
 ```js
 context: '/Users/Frank/webpack-demo/src',
 entry: {
-  index: './src/index.js'
+  index: './src/index.jsx'
 }
 ```
 很显然这次 webpack 不会构建成功，错误信息是：`ERROR in Entry module not found: Error: Can't resolve './src/view.js' in '/Users/ylfe/Frank/webpack-demo/src'`
@@ -55,10 +55,10 @@ entry: {
 `entry` 的值可以是一个字符串、数组、对象或是函数。
 #### >字符串
 ```js
-entry: 'index.js'
+entry: 'index.jsx'
 // 等价于
 entry: {
-  main: 'index.js'
+  main: 'index.jsx'
 }
 ```
 `chunk` 被命名为 `main`
@@ -67,19 +67,19 @@ entry: {
 ```js
 ...webpackBootstrap
 
-({/***/ "./index.js":
+({/***/ "./index.jsx":
 /*!******************!*\
-  !*** ./index.js ***!
+  !*** ./index.jsx ***!
   \******************/
 /*! no static exports found */
 /***/ (function(module, exports) {
-eval("\n\n//# sourceURL=webpack:///./index.js?");
+eval("\n\n//# sourceURL=webpack:///./index.jsx?");
 /***/ })
 /******/ });
 ```
 #### >数组
 ```js
-entry: ['index.js']
+entry: ['index.jsx']
 
 ```
 webpack 针对数组中的每一项进行依赖分析、打包，只生成一个 bundle 文件。
@@ -88,28 +88,28 @@ webpack 针对数组中的每一项进行依赖分析、打包，只生成一个
 虽然只有一项，bundle内容也不同于上例：
 ```js
 ({
-/***/ "./index.js":
+/***/ "./index.jsx":
 /*!******************!*\
-  !*** ./index.js ***!
+  !*** ./index.jsx ***!
   \******************/
 /*! no static exports found */
 /***/ (function(module, exports) {
-eval("\n\n//# sourceURL=webpack:///./index.js?");
+eval("\n\n//# sourceURL=webpack:///./index.jsx?");
 /***/ }),
 /***/ 0:
 /*!************************!*\
-  !*** multi ./index.js ***!
+  !*** multi ./index.jsx ***!
   \************************/
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
-eval("module.exports = __webpack_require__(/*! ./index.js */\"./index.js\");\n\n\n//# sourceURL=webpack:///multi_./index.js?");
+eval("module.exports = __webpack_require__(/*! ./index.jsx */\"./index.jsx\");\n\n\n//# sourceURL=webpack:///multi_./index.jsx?");
 /***/ })
 /******/ });
 ```
 #### >对象
 ```js
 entry: {
-  index: 'index.js'
+  index: 'index.jsx'
 },
 ```
 每个键（key）会是 chunk 的名称，值描述了 chunk 的入口文件（在output中通过[name]取得）
@@ -119,7 +119,7 @@ entry: {
 entry: () => new Promise(resolve => {
   setTimeout(()=>{
     resolve({
-      index: './index.js'
+      index: './index.jsx'
     })
   })
 })
@@ -169,7 +169,7 @@ noParse: [/jquery/]
 noParse: 'jquery'
 noParse: content => /jquery/.test(content)
 ```
-这意味着即使在 `.src/index.js` 里面 'import' 了 jquery ，webpack 也不会把 jquery 打进 bundle，其实根本就没有去处理 jquery。
+这意味着即使在 `.src/index.jsx` 里面 'import' 了 jquery ，webpack 也不会把 jquery 打进 bundle，其实根本就没有去处理 jquery。
 > 既然忽略了 jquery，就不要再使用 import 等引用它了。测试发现如果 import 的目标模块被 noParse 匹配，webpack 不会转译这个文件的所有 import 语句。。。
 
 忽略一些比较大的没采用模块化的库可以大大提升编译速度。

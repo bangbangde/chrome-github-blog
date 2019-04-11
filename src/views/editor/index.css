@@ -1,0 +1,18 @@
+.editor-container {
+    position: fixed;left: 0; top: 0; bottom: 0; right: 0; overflow: hidden; color: #b3b3b3; background-color: #3d3d3d;
+    display: flex; flex-direction: row;
+}
+.left, .right {box-sizing: border-box; height: 100%;}
+.left {flex: 0 0 auto; width: 50%; display: flex; flex-direction: column; border-color: #2e2e2e;}
+.right {flex: 1 1 0; background-color: #4d4d4d; padding: 40px 40px 80px;}
+.divider {flex: 0 0 10px; width: 10px; background-color: firebrick; cursor: col-resize;}
+
+.editor-title {
+    color: #b3b3b3;background-color: transparent; border: none; padding: 0 80px 10px 40px;
+    margin-top: 20px; font-size: 30px; font-family: Georgia,Times New Roman,Times,Songti SC,serif;
+}
+.editor-title:focus {outline: none;}
+.editor-bar {
+    background-color: #2e2e2e; border-color: #2e2e2e;
+}
+.editor-text {flex: 1 1 auto;}
