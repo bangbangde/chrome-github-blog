@@ -15,7 +15,7 @@ import { SnackbarProvider, withSnackbar } from 'notistack';
 import { withStyles } from '@material-ui/core/styles';
 
 const StepData = {
-    steps: ['授权访问 GitHub', '填写仓库名称', '初始化项目'],
+    steps: ['Auth', 'repository', '初始化项目'],
     buttons: ['授权', '下一步', '开始写作'],
     getContent: function (index) {
         switch (index) {

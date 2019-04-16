@@ -1,15 +1,15 @@
 import React from 'react';
 import ReactDom from 'react-dom';
+import { SnackbarProvider } from 'notistack';
+import Option from '@/views/option';
 
-async function initView(){
-    const Init = (await import('@/views/init/index')).default;
-    let background = chrome.extension.getBackgroundPage().actions;
-    let step =background.step;
-    return <Init step={step}></Init>;
-}
+const container = document.createElement('div');
+const view = (
+    <SnackbarProvider maxSnack={3}>
+        <Option></Option>
+    </SnackbarProvider>
+);
+ReactDom.render(view, container);
 
-let container = document.createElement('div');
+window.background = chrome.extension.getBackgroundPage().actions;
 document.body.appendChild(container);
-initView().then(view => {
-    ReactDom.render(view, container);
-})

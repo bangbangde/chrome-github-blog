@@ -1,5 +1,5 @@
 .editor-container {
-    position: fixed;left: 0; top: 0; bottom: 0; right: 0; overflow: hidden; color: #b3b3b3; background-color: #3d3d3d;
+    overflow: hidden; color: #b3b3b3; background-color: #3d3d3d;
     display: flex; flex-direction: row;
 }
 .left, .right {box-sizing: border-box; height: 100%;}

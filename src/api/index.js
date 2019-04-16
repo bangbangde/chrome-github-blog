@@ -3,23 +3,33 @@ import Mock from './mock';
 
 axios.defaults.baseURL = 'https://api.github.com';
 axios.defaults.headers.common['Accept'] = 'application/vnd.github.v3+json';
+const mock = new Mock(axios.defaults.adapter);
+axios.defaults.adapter = config => mock.test(config);
 axios.defaults.validateStatus = function (status) {
     return status < 500; // Reject only if the status code is greater than or equal to 500
 }
+axios.interceptors.response.use(res => {
+    console.log('$interceptors', res)
+    if(res.data && res.data.message){
+        return Promise.reject(res.data);
+    }
+    return res;
+});
+export function setData(key, value) {
+    axios[key] = value;
+    if(key == 'token'){
+        axios.defaults.headers.common['Authorization'] = 'token ' + value;
+    }
+}
 
-const mock = new Mock(axios.defaults.adapter);
-axios.defaults.adapter = function (config) {
-    return mock.test(config)
-};
-
-export async function createAuthorization(username, password, note, scopes) {
+export async function createAuthorization(username, password) {
     return axios({
         url: 'authorizations',
         method: 'post',
         auth: {username, password},
         data: {
-            "scopes": scopes || ["repo", "user"],
-            "note": note || "chrome extension access token"
+            "scopes": ["repo"],
+            "note": axios.note
         },
     });
 }
@@ -62,6 +72,28 @@ export async function createRepository(name) {
     });
 }
 
-export function setToken(token) {
-    axios.defaults.headers.common['Authorization'] = 'token ' + token;
+export async function getContents(path = '', isRaw = false) {
+    return axios({
+        url: `repos/${axios.login}/${axios.repo}/contents/${path}`,
+        method: 'get',
+        headers: {
+            Accept: isRaw ? 'application/vnd.github.v3.raw+json' : 'application/vnd.github.v3+json'
+        },
+        param: {ref: axios.branch}
+    });
 }
+
+export async function updateContents(path, content, sha) {
+    return axios({
+        url: `repos/${axios.login}/${axios.repo}/contents/${path}`,
+        method: 'put',
+        data: {
+            message: axios.message,
+            content: btoa(content),
+            branch: axios.branch,
+            sha
+        }
+    });
+}
+
+export {axios}

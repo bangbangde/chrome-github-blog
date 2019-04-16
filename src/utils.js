@@ -28,7 +28,136 @@ let Store = {
   })
 };
 
+/**
+ * DateFormat(new Date(), "[ '北京时间' z yyyy-MM-dd a hh:mm:ss.SSSS EE]")
+ * DateFormat("[ '北京时间' z yyyy-MM-dd a hh:mm:ss.SSSS EE]")
+ * DateFormat()
+ *
+ * @param date
+ * @param pattern
+ * @returns {string}
+ * @constructor
+ */
+function DateFormat(date, pattern) {
+  if(arguments.length == 1 && typeof date == 'string'){
+    pattern = date;
+    date = null
+  }
+  var _p = pattern || 'yyyy/MM/dd HH:mm:ss'
+  date = date||new Date()
 
+  var _PLACEGOLDER = '_@@_'
+
+  var AP = ['AM', 'PM']
+  var WEEKDAY = ['日','一','二','三','四','五','六', '礼拜']
+
+  var textIgnore = []
+  var _i = 0
+
+  _p = _p.replace(/('.*')/g, function(match){
+    textIgnore.push(match.substring(1, match.length-1) )
+    return _PLACEGOLDER
+  })
+
+  var lengthHandler= function(str, length){
+    str += ''
+    var l = length - str.length
+    if(l > 0) {
+      return (Math.pow(10, l)+'').substr(1) + str
+    }else {
+      return str.substr(0-l, length)
+    }
+  }
+
+  var patterns = {}
+  //Year
+  patterns['y+'] = function (match, offset, string){
+    let target = date.getFullYear()
+    return lengthHandler(target, match.length)
+  }
+  //Month in year
+  patterns['M+'] = function (match, offset, string){
+    let target = date.getMonth() + 1
+    return lengthHandler(target, match.length)
+  }
+  //Day in month
+  patterns['d+'] = function (match, offset, string){
+    let target = date.getDate()
+    return lengthHandler(target, match.length)
+  }
+  //Am/pm marker
+  patterns['a'] = function (match, offset, string){
+    let target = date.getHours()
+    if(target >= 0 && target < 12){
+      target = AP[0]
+    }else{
+      target = AP[1]
+    }
+    return target
+  }
+
+  //Hour in day (0-23)
+  patterns['H+'] = function (match, offset, string){
+    let target = date.getHours()
+    return lengthHandler(target, match.length)
+  }
+
+  //Hour in am/pm (1-12)
+  patterns['h+'] = function (match, offset, string){
+    let target = date.getHours()
+    target = (target > 12 || target == 0) ? Math.abs(target - 12) : target
+    return lengthHandler(target, match.length)
+  }
+
+  //Minute in hour(0-59)
+  patterns['m+'] = function (match, offset, string){
+    let target = date.getMinutes()
+    return lengthHandler(target, match.length)
+  }
+
+  //Seconds in minute (0-59)
+  patterns['s+'] = function (match, offset, string){
+    let target = date.getSeconds()
+    return lengthHandler(target, match.length)
+  }
+
+  //Millisecond
+  patterns['S+'] = function (match, offset, string){
+    let target = date.getSeconds()
+    return lengthHandler(target, match.length)
+  }
+
+  //Day name in week
+  patterns['E+'] = function (match, offset, string){
+    let target = date.getDay()
+    let length = match.length
+    if(length == 1){
+      return WEEKDAY[target]
+    }else if(length == 2){
+      return (WEEKDAY[7]||'周') + WEEKDAY[target]
+    }
+
+  }
+
+  //Time zone
+  patterns['z+'] = function (match, offset, string){
+    let target = date.getTimezoneOffset()
+    if(target > 0){
+      return '-' + (target/60)
+    }
+    return '+' + (-target/60)
+  }
+
+  for(var k in patterns) {
+    _p = _p.replace(new RegExp(k, 'g'), patterns[k]);
+  }
+
+  _p = _p.replace(new RegExp(_PLACEGOLDER, 'g'), function(){
+    return textIgnore[_i++]
+  })
+
+  return _p
+}
 export {
-  promisify, Store
+  promisify, Store, DateFormat
 }
