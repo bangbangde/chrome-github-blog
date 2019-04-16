@@ -3,6 +3,7 @@ import ReactDom from 'react-dom';
 import { SnackbarProvider } from 'notistack';
 import Option from '@/views/option';
 
+window.background = chrome.extension.getBackgroundPage().actions;
 const container = document.createElement('div');
 const view = (
     <SnackbarProvider maxSnack={3}>
@@ -10,6 +11,4 @@ const view = (
     </SnackbarProvider>
 );
 ReactDom.render(view, container);
-
-window.background = chrome.extension.getBackgroundPage().actions;
 document.body.appendChild(container);

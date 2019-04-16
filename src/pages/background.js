@@ -15,38 +15,20 @@ import * as Api from '@/api';
 
 		repo: undefined,                       // *required
 		branch: 'master',                      // "master" | "gh-pages"
-		path: '/',                             // "/" | "/docs"
+		path: '/_posts',                             // "/" | "/docs/_posts" | "/_posts"
 		categories: ['笔记', '随笔', '前端'],
 		tags: ['Javascript', 'css']
 	};
 
-	/**
-	 * Init
-	 *
-	 * @returns {Promise<void>}
-	 */
-	async function init(){
-		let valid = false; // 数据完整性、有效性
-		try {
-			// 初始化数据
-			await initData();
-			if(data.token && data.repo){
-				await updateUserInfo();
-				valid = await validData();
-			}
-		}catch (e) {
-			console.error(e);
-		}finally {
-			chrome.browserAction.onClicked.addListener(() => {
-				if(valid){
-					chrome.tabs.create({
-						url: 'editor.html'
-					})
-				}else{
-					chrome.runtime.openOptionsPage();
-				}
-			});
+	async function check(){
+		let valid = false;
+		// 初始化数据
+		await initData();
+		let token = await validToken();
+		if(!token.success){
+			return token;
 		}
+		return await checkConfig();
 	}
 
 	/**
@@ -69,26 +51,63 @@ import * as Api from '@/api';
 			Api.setData(key, data[key]);
 		})
 		await dev();
-		console.log(data);
 	}
 
-	/**
-	 * 通过访问仓库目录检验数据有效性
-	 *
-	 * @returns {Promise<boolean>}
-	 */
-	async function validData() {
-		await getContents();
-		return true;
+	async function dev(){
+		let info = await promisify(chrome.management.getSelf)();
+		if(info.installType == 'development'){
+			// await Store.set({
+			// 	token: '',
+			// 	login: 'CQByte',
+			// 	repo: 'CQByte.github.io'
+			// });
+			console.log(data)
+			Store.log();
+		}
 	}
 
-	async function updateUserInfo(){
+	async function validToken(){
+		if(!data.token) {
+			return {success: false, message: 'token not set'}
+		}
+
+		// 通过获取用户信息判断token是否失效
 		let user = await Api.getUserInfo();
-		await Store.set({
-			name: user.data.name,
-			login: user.data.login,
-			avatar: user.data.avatar_url,
-		});
+		if(!user.success){
+			await Store.remove('token')
+			return {success: false, message: user.data.message};
+		}
+		return {success: true};
+	}
+
+	async function checkConfig(){
+		if(!data.repo){
+			return {success: false, message: 'repo not set'}
+		}
+
+		// 通过访问仓库检测配置是否有效
+		let repo = await Api.getContents();
+		return repo;
+	}
+
+	async function updateUserInfo(user){
+		if(user){
+			await Store.set({
+				name: user.data.name,
+				login: user.data.login,
+				avatar: user.data.avatar_url,
+			});
+			user.success = true;
+		}else{
+			user = await Api.getUserInfo();
+			if(user.success){
+				await Store.set({
+					name: user.data.name,
+					login: user.data.login,
+					avatar: user.data.avatar_url,
+				});
+			}
+		}
 		return user;
 	}
 
@@ -107,19 +126,35 @@ import * as Api from '@/api';
 	 * @returns {Promise<AxiosPromise>}
 	 */
 	async function doLogin(...args){
-		// 查询旧的 PAT，若存在则删除
-		let authorizations = await Api.listAuthorizations(...args);
-		let auth = authorizations.data.find(data => data.note == data.note);
-		if(auth){
-			await Api.deleteAuthorization(...args, auth.id);
+		if(args.length == 1){
+			await Store.set({
+				token: args[0]
+			});
+			return await updateUserInfo();
+		}else{
+			// 查询旧的 PAT，若存在则删除
+			let authorizations = await Api.listAuthorizations(...args);
+			if(!authorizations.success){
+				return authorizations;
+			}
+			let auth = authorizations.data.find(data => data.note == data.note);
+			if(auth){
+				let del = await Api.deleteAuthorization(...args, auth.id);
+				if(!del){
+					return del;
+				}
+			}
+			// 创建新的 PAT
+			auth = await Api.createAuthorization(...args, data.note)
+			if(!auth.success){
+				return auth;
+			}
+			await Store.set({
+				token: auth.data.token
+			});
+			// 获取用户信息
+			return await updateUserInfo();
 		}
-		// 创建新的 PAT
-		auth = await Api.createAuthorization(...args, data.note)
-		await Store.set({
-			token: auth.data.token
-		});
-		// 获取用户信息
-		return await updateUserInfo();
 	}
 
 	/**
@@ -128,47 +163,47 @@ import * as Api from '@/api';
 	 * @param repoName
 	 * @returns {Promise<void>}
 	 */
-	async function setRepo(repoName){
-		let repos = await Api.listRepositories();
-		let repo = repos.data.find(repo => repo.name == repoName);
-		if(!repo){
-			repo = await Api.createRepository(repoName)
+	async function setRepo(repo, branch, path){
+		let valid = await Api.getBranches(repo, branch);
+		if(valid.success){
+
+			await Store.set({repo, branch, path});
 		}
-		await Store.set({repo: repoName});
+		return valid;
 	}
 
-	async function dev(){
-		let info = await promisify(chrome.management.getSelf)();
-		if(info.installType == 'development'){
-			await Store.set({
-				token: '18baef4eacc6b4e70a544a754561cc975357efb7',
-				login: 'CQByte',
-				repo: 'CQByte.github.io'
-			});
-			Store.log();
-		}
-	}
-
-	init().then(() => {
-		console.log('extension initialized');
+	check().catch( e => {
+		return {success: false, message: e.message}
+	}).then(res => {
+		chrome.browserAction.onClicked.addListener(() => {
+			if(res.success){
+				chrome.tabs.create({
+					url: 'editor.html'
+				})
+			}else{
+				chrome.runtime.openOptionsPage();
+				console.warn(res.message)
+			}
+		});
+		console.log('extension is ready');
 	});
 
-	/**
-	 * 调用时务必处理异常
-	 **/
 	const Background = {
 		doLogin,
 		setRepo,
 		getContents,
 		createContent,
-		validData,
+		checkConfig,
+		validToken,
 		save: Store.set,
 		get: Store.get,
 		get categories(){ return data.categories; },
 		get tags(){ return data.tags; },
 		get avatar(){ return data.avatar; },
 		get login(){ return data.login; },
-		get repo(){ return data.repo; }
+		get repo(){ return data.repo; },
+		get branch(){ return data.branch; },
+		get path(){ return data.path; }
 	}
 
 	window.actions = Background;

@@ -9,10 +9,12 @@ axios.defaults.validateStatus = function (status) {
     return status < 500; // Reject only if the status code is greater than or equal to 500
 }
 axios.interceptors.response.use(res => {
-    console.log('$interceptors', res)
     if(res.data && res.data.message){
-        return Promise.reject(res.data);
+        res.success = false
+    }else{
+        res.success = true
     }
+    console.log('AXIOS response:', res.config.url, res.success?'success':'error')
     return res;
 });
 export function setData(key, value) {
@@ -57,9 +59,16 @@ export async function getUserInfo() {
     });
 }
 
-export async function listRepositories() {
+export async function getRepositories() {
     return axios({
         url: '/user/repos',
+        method: 'get'
+    });
+}
+
+export async function getBranches(repo, branch = '') {
+    return axios({
+        url: `/repos/${axios.login}/${axios.repo}/branches/${branch}`,
         method: 'get'
     });
 }

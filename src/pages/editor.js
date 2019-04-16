@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDom from 'react-dom';
-import {SnackbarProvider} from "notistack";
+import { SnackbarProvider } from "notistack";
 import Editor from '@/views/editor/index';
 
 window.background = chrome.extension.getBackgroundPage().actions;

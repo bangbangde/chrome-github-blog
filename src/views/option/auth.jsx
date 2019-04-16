@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {Fragment} from 'react';
 import Button from '@material-ui/core/Button';
 import Typography from '@material-ui/core/Typography';
 import TextField from '@material-ui/core/TextField';
@@ -11,6 +11,12 @@ import FormControl from '@material-ui/core/FormControl';
 import Visibility from '@material-ui/icons/Visibility';
 import VisibilityOff from '@material-ui/icons/VisibilityOff';
 import { withStyles } from '@material-ui/core/styles';
+import DialogTitle from "@material-ui/core/DialogTitle";
+import DialogContent from "@material-ui/core/DialogContent";
+import Files from "@/views/editor/files";
+import DialogActions from "@material-ui/core/DialogActions";
+import Dialog from "@material-ui/core/Dialog";
+import Link from '@material-ui/core/Link';
 
 const loginType = {
     PASSWORD: 'password',
@@ -62,35 +68,21 @@ class Auth extends React.Component {
     submit(){
         let args = this.state.loginType == loginType.PASSWORD ? ['username', 'password'] : ['token'];
         if(this.validate(args)){
-            let params = args.map(key => this.state[key]);
-            if(params.length == 1){
-                this.background.setToken(...params);
-                this.props.onSubmit(true);
-            }else{
-                this.background.login(...params).then(res => {
-                    if(res.data){
-                        this.props.onSubmit(res.data);
+            this.props.onSubmit(new Promise((resolve, reject) => {
+                let params = args.map(key => this.state[key]);
+                this.background.doLogin(...params).then(res => {
+                    if(res.success){
+                        resolve();
                     }else{
-                        this.props.toast(res.error, 'warning')
-                        this.props.onSubmit(false);
+                        reject(err.message);
                     }
                 }).catch(err => {
-                    console.log(err)
-                    this.props.toast('请求失败', 'warning')
-                    this.props.onSubmit(false);
+                    reject(err.message);
                 });
-            }
-
+            }));
         }else{
-            this.props.onSubmit(false);
+            this.props.onSubmit(Promise.reject());
         }
-    }
-
-
-    componentDidUpdate(preProps, preState, snapShot) {
-        console.log(preProps.submit, this.props.submit)
-        if(preProps.submit != this.props.submit && this.props.submit)
-            this.submit();
     }
 
     genFieldsPWD(classes){
@@ -129,8 +121,7 @@ class Auth extends React.Component {
                 />
                 <FormHelperText>密码只用于获取 GitHub token，不会被存储到任何地方。</FormHelperText>
             </FormControl>
-
-            <Button className={classes.linkBtn} color="primary" size="small" onClick={this.changeType.bind(this, loginType.TOKEN)}>使用 token</Button>
+            <Link className={classes.linkBtn} variant='body2' onClick={this.changeType.bind(this, loginType.TOKEN)}>使用 token</Link>
         </fieldset>;
     }
 
@@ -149,32 +140,28 @@ class Auth extends React.Component {
                 value={this.state.token}
                 margin="dense"
             />
-            <Button className={classes.linkBtn} color="primary" size="small" onClick={this.changeType.bind(this, loginType.PASSWORD)}>密码登录</Button>
+            <Link className={classes.linkBtn} variant='body2' onClick={this.changeType.bind(this, loginType.PASSWORD)}>密码登录</Link>
         </fieldset>;
     }
 
     render() {
         // 在导出时使用 withStyles 注入的
         const { classes } = this.props;
-
-        if(this.state.loginType == loginType.PASSWORD){
-            return this.genFieldsPWD(classes);
-        }else{
-            return this.genFieldsToken(classes);
-        }
+        return <React.Fragment>
+            {this.state.loginType == loginType.PASSWORD ? this.genFieldsPWD(classes) : this.genFieldsToken(classes)}
+            <div className={classes.actions}>
+                <Button onClick={this.submit.bind(this)} color="primary" variant='contained'>确定</Button>
+            </div>
+        </React.Fragment>
     }
 }
 const styles = theme => ({
-    root: {
-        padding: '0 10%',
-        maxWidth: '1000px',
-        margin: 'auto'
-    },
     fieldset: {
         border: 'none', margin: 0, padding: 0
     },
     field: {marginBottom: theme.spacing.unit},
-    linkBtn: {float: 'right'}
+    linkBtn: {cursor: 'pointer'},
+    actions: {textAlign: 'right', marginTop: 8}
 });
 
 export default withStyles(styles)(Auth);
