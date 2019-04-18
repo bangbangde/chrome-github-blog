@@ -6,22 +6,27 @@ import * as Api from '@/api';
 	 *  Storage data
 	 */
 	const data = {
-		token: undefined,                      // *required
 		name: undefined,
 		login: undefined,
 		avatar: undefined,
+		token: undefined,                      // *required
 		note: 'chrome extension access token',
-		message: 'by chrome extension',
 
 		repo: undefined,                       // *required
 		branch: 'master',                      // "master" | "gh-pages"
 		path: '/_posts',                             // "/" | "/docs/_posts" | "/_posts"
-		categories: ['笔记', '随笔', '前端'],
-		tags: ['Javascript', 'css']
+		message: 'by chrome extension',
+
+		postsIndex: null,  // @type Set 缓存文章索引
+
+		editorWidthPercent: 0.5
+
+		// TODO:
+		// categories: ['笔记', '随笔', '前端'],
+		// tags: ['Javascript', 'css'],
 	};
 
 	async function check(){
-		let valid = false;
 		// 初始化数据
 		await initData();
 		let token = await validToken();
@@ -197,13 +202,14 @@ import * as Api from '@/api';
 		validToken,
 		save: Store.set,
 		get: Store.get,
-		get categories(){ return data.categories; },
-		get tags(){ return data.tags; },
+		remove: Store.remove,
+		get postsIndex(){ return data.postsIndex; },
 		get avatar(){ return data.avatar; },
 		get login(){ return data.login; },
 		get repo(){ return data.repo; },
 		get branch(){ return data.branch; },
-		get path(){ return data.path; }
+		get path(){ return data.path; },
+		get width(){ return data.editorWidthPercent; }
 	}
 
 	window.actions = Background;

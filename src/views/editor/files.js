@@ -8,6 +8,10 @@ import SnackbarContent from '@material-ui/core/SnackbarContent';
 import ErrorIcon from '@material-ui/icons/Error';
 import Refresh from '@material-ui/icons/Refresh';
 import IconButton from "@material-ui/core/IconButton";
+import DialogTitle from "@material-ui/core/DialogTitle";
+import DialogContent from "@material-ui/core/DialogContent";
+import DialogActions from "@material-ui/core/DialogActions";
+import Dialog from "@material-ui/core/Dialog";
 
 class Files extends React.Component {
     constructor(props){
@@ -44,43 +48,45 @@ class Files extends React.Component {
             })
         };
     }
-
+    // if(name){
+    //     if(!/^\d{4}-\d{2}-\d{2}/.test(path)){
+    //         name = DateFormat("yyyy-MM-dd-") + name;
+    //     }
+    // }else{
+    //     name = DateFormat("yyyy-MM-dd-HHmmss.'md'")
+    // }
     handleChange(){
         this.setState({newFileName: event.target.value})
     }
-
-    onCreateBtnClicked(){
+    onBtnCreateClickListener(){
         this.props.onCreate(this.state.path, this.state.newFileName)
     }
-
-    handleFileClick(node){
-        console.log('handleFileClick', node)
+    onFileSelectedListener(node){
         if(node && node.type == 'file'){
             this.props.onSelect(node)
         }else{
-            console.log('handleFileClick', node.path, node.path.split('/'))
             this.setState({
                 path: node.path,
                 paths: node.path.split('/')
             })
         }
     }
-
-    onRefresh(){
-        this.setState({
-            netErr: ''
-        })
-    }
-
-    handleRedirect(index){
+    onLinkClickListener(index){
         let paths = this.state.paths.slice(0, index+1);
-        console.log('handleRedirect', this.state.loading, paths)
         if(!this.state.loading){
             this.setState({
                 path: paths.join('/'),
                 paths
             })
         }
+    }
+    onBtnCancelClickListener(){
+        this.props.onCancel();
+    }
+    onBtnRefreshClickListener(){
+        this.setState({
+            netErr: ''
+        })
     }
 
     render() {
@@ -92,7 +98,7 @@ class Files extends React.Component {
             <span
                 key={path}
                 className={[index + 1 < length ? classes.path : null].join(' ')}
-                onClick={this.handleRedirect.bind(this, index)}
+                onClick={this.onLinkClickListener.bind(this, index)}
             >
                 {path}/
             </span>
@@ -115,7 +121,7 @@ class Files extends React.Component {
                                 aria-label="refresh"
                                 color="inherit"
                                 className={classes.refresh}
-                                onClick={this.onRefresh.bind(this)}
+                                onClick={this.onBtnRefreshClickListener.bind(this)}
                             >
                                 <Refresh className={classes.iconRefresh} />
                             </IconButton>,
@@ -135,7 +141,7 @@ class Files extends React.Component {
                         {node.type == 'file' ? iconFile : iconDirectory}
                         <span
                             className={classes.fileName}
-                            onClick={this.handleFileClick.bind(this, node)}
+                            onClick={this.onFileSelectedListener.bind(this, node)}
                         >{node.name}</span>
                     </li>
                 ))
@@ -148,31 +154,45 @@ class Files extends React.Component {
         }
 
         return (
-            <div className={classes.root}>
-                <div className={classes.head}>
+            <Dialog
+                fullWidth
+                maxWidth={'sm'}
+                open={true}
+            >
+                <DialogTitle>Select post</DialogTitle>
+                <DialogContent>
+                    <div className={classes.root}>
+                        <div className={classes.head}>
                     <span
                         className={classes.path}
-                        onClick={this.handleRedirect.bind(this, -1)}
+                        onClick={this.onLinkClickListener.bind(this, -1)}
                     >{this.state.root}/</span>
-                    {genPath()}
-                    <TextField
-                        className={classes.inputName}
-                        onChange={this.handleChange.bind(this)}
-                        type="text"
-                        value={this.state.newFileName}
-                        placeholder={'yyyy-MM-ddHHmmss.md'}
-                    />
-                    <Button
-                        className={classes.btnNew}
-                        onClick={this.onCreateBtnClicked.bind(this)}
-                        color="primary" variant="contained">
-                        新建
+                            {genPath()}
+                            <TextField
+                                className={classes.inputName}
+                                onChange={this.onLinkClickListener.bind(this)}
+                                type="text"
+                                value={this.state.newFileName}
+                                placeholder={'yyyy-MM-ddHHmmss.md'}
+                            />
+                            <Button
+                                className={classes.btnNew}
+                                onClick={this.onBtnCreateClickListener.bind(this)}
+                                color="primary" variant="contained">
+                                新建
+                            </Button>
+                        </div>
+                        <ul className={classes.directories}>
+                            {genNodes()}
+                        </ul>
+                    </div>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={this.onBtnCancelClickListener.bind(this)} color="primary">
+                        取消
                     </Button>
-                </div>
-                <ul className={classes.directories}>
-                    {genNodes()}
-                </ul>
-            </div>
+                </DialogActions>
+            </Dialog>
         );
     }
 }

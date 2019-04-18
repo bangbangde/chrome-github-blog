@@ -4,17 +4,34 @@ import EditorBar from './editor-bar';
 import Files from './files';
 import TextEditor from "@/components/TextEditor/index";
 import Marken from "marked";
-import Dialog from '@material-ui/core/Dialog';
-import DialogActions from '@material-ui/core/DialogActions';
-import DialogContent from '@material-ui/core/DialogContent';
-import DialogTitle from '@material-ui/core/DialogTitle';
 import CssBaseline from '@material-ui/core/CssBaseline';
-import Button from "@material-ui/core/Button";
 import {DateFormat} from "@/utils";
 import CircularProgress from "@material-ui/core/CircularProgress";
+import yaml from "yaml";
 import { withSnackbar } from 'notistack';
+import AppBar from "@material-ui/core/AppBar";
+import Typography from "@material-ui/core/Typography";
+import Toolbar from "@material-ui/core/Toolbar";
+import Divider from "@material-ui/core/Divider";
+import List from "@material-ui/core/List";
+import ListItem from "@material-ui/core/ListItem";
+import ListItemIcon from "@material-ui/core/ListItemIcon";
+import ListItemText from "@material-ui/core/ListItemText";
+import Drawer from "@material-ui/core/Drawer";
+import classNames from 'classnames';
+import './style.css'
+import Button from "@material-ui/core/Button";
 
-
+const defMeta =
+`---
+layout: post
+title: 'no title'
+subtitle: 副标题
+# categories: ['分类']
+tags: ['note']
+# cover: '头图'
+---
+`
 function setListener() {
     let handleMouseMove = ev => {
         this.setState({editorWidth: ev.pageX});
@@ -49,145 +66,184 @@ function setListener() {
     })
 }
 
-class PEDitor extends React.Component {
+function parse(data) {
+    // TODO:// 检查正则表达式，运行就卡死
+    // let source = data.replace(/^---((\s+.*)*)\s---/, (match, p1) => {
+    //     info = p1;
+    //     return '';
+    // })
+    let index = data.indexOf('---', 3);
+    if(index){
+        return Marken(data.substr(index+3))
+    }
+    return Marken(data)
+}
+class MDEditor extends React.Component {
     constructor(props){
         super(props);
-        let ewp = 0.5
         this.state = {
-            editorWidth: ewp * document.body.offsetWidth,
-            editorWidthPercent: ewp,
-            info: '',
-            source: '---\ntitle: no title\n---\n',
-            result: '',
-            path: '_post/' + DateFormat("yyyy-MM-dd-HHmmss.'md'"),
-            sha: null,
-            open: false
+            showFiles: false,
+            showDrawer: false,
+
+            editorWidth: document.body.offsetWidth * background.width,
+            editorWidthPercent: background.width,
+
+            source: undefined,
+            result: undefined,
+            // 当前打开文档相关信息
+            path: undefined,
+            sha: undefined,
+            index: -1,
+
+            postsIndex: background.postsIndex || [],
         };
-        background.get(['editorWidthPercent']).then(res => {
-            this.setState({
-                editorWidthPercent: res.editorWidthPercent,
-                editorWidth: res.editorWidthPercent * document.body.offsetWidth
+        // 节流使用的变量
+        this.saveInterval = 10000;
+        this.lastSaveTime = 0;
+        /**
+         * @type { path: string,sha:string,lastModified:string }
+         */
+        this.post = null; // 指向 postsIndexList 成员
+    }
+    componentWillMount() {
+        setListener.bind(this)();
+        this.loadData();
+        console.log('show time', this.state)
+    }
+
+    loadData(data){
+        if(!data){ // 默认新文章
+            data = {
+                source: defMeta,
+                path: background.path + '/' + DateFormat("yyyy-MM-dd-HHmmss.'md'")
+            }
+        }else if(!data.source){ // 新建文章
+            data.source = defMeta;
+        }
+        data.result = parse(data.source);
+        this.setState(data);
+    }
+
+    onCreateFile(path){
+        this.setState({showFiles: false})
+        this.loadData({path});
+    }
+
+    onFileSelected(file){
+        this.setState({showFiles: false});
+        // if(file.path.substr(-2).toLowerCase() != 'md'){
+        //     this.toast('sorry, 我只编辑 Markdown 文件', 'warning')
+        //     return;
+        // }
+        let index = this.state.postsIndex.findIndex(item => item.path == file.path)
+        if(index != -1){
+            this.post = this.state.postsIndex[index];
+            this.toast('为你打开的是该文件的本地缓存，请先提交或删除此缓存', 'info');
+            background.get(this.post.path).then(res => {
+                this.loadData({
+                    path: this.post.path,
+                    sha: this.post.sha,
+                    source: res[this.post.path],
+                    postIndex: index
+                })
+            });
+        }else{
+            this.showLoading()
+            background.getContents(file.path, true).then(res => {
+                let source = null;
+                if(typeof res.data == 'object'){
+                    source = atob(res.data.content);
+                }else{
+                    source = res.data;
+                }
+                this.loadData({source, path: file.path, sha: file.sha})
+                this.hideLoading();
+            }).catch(e => {
+                this.hideLoading()
+                this.toast(e.message, 'error')
+            })
+        }
+    }
+    onOpenLocalFile(index){
+        this.post = this.state.postsIndex[index];
+        background.get(this.post.path).then(res => {
+            this.loadData({
+                path: this.post.path,
+                sha: this.post.sha,
+                source: res[this.post.path],
+                index: index
             })
         });
-        this.autoSaveTime = 10000;
-        this.timerID = null;
-        this.edited = false;
-        this.ext = 'md';
-        setListener.bind(this)();
+    }
+    handleUpdate(ev){
+        this.setState({source: ev.value, result: parse(ev.value)})
+        this.cache(ev.value)
+    }
+    handleKeyDown(ev){
+        switch (ev.type) {
+            case 'save':
+                this.saveData()
+                break
+        }
+    }
+    cache(){
+        if(Date.now() - this.lastSaveTime > this.saveInterval){
+            this.lastSaveTime = Date.now();
+            this.saveData();
+        }
+    }
+    saveData(){
+        background.save({
+            [this.state.path]: this.state.source
+        }).then(res => {
+            let {path, sha, postsIndex} = this.state;
+            if(this.post){
+                this.post.lastModified = DateFormat();
+            }else{
+                this.post = postsIndex.find(item => item.path == path);
+                if(this.post){
+                    this.post.lastModified = DateFormat();
+                }else{
+                    this.post = {path,sha,lastModified: DateFormat()};
+                    postsIndex.unshift(this.post)
+                }
+            }
+            this.setState({postsIndex});
+            background.save({postsIndex});
+        })
     }
 
-    toast(message, variant){
-        // variant could be success, error, warning or info
-        this.props.enqueueSnackbar(message, { variant });
-    };
+    onFileCanceled(){
+        this.setState({showFiles: false})
+    }
 
+    showDrawer(){
+        this.setState({showDrawer: !this.state.showDrawer});
+    }
     open(){
         this.setState({
-            open: true
+            showFiles: true
         })
     }
-    handleClose(){
-        this.setState({open: false})
-    }
-    onCreateFile(path, name){
-        console.log('onCreateFile', path, name)
-        if(name){
-            if(!/^\d{4}-\d{2}-\d{2}/.test(path)){
-                name = DateFormat("yyyy-MM-dd-") + name;
-            }
-            let extExec = /\.(\w+)$/i.exec(name);
-            if(extExec){
-                this.ext = extExec[1]
-            }else{
-                name += '.md'
-            }
-        }else{
-            name = DateFormat("yyyy-MM-dd-HHmmss.'md'")
-        }
-        this.setState({
-            path: path + '/' + name,
-            source: '---\ntitle: no title\n---\n',
-            sha: null,
-            open: false,
-        })
-    }
-    doCreateFile(){
-        if(this.lastChanged && this.lastChanged == this.state.source.trim()){
-            return this.toast('内容没有改变')
-        }
+
+    upload(){
+        if(this.lastChanged && this.lastChanged == this.state.source.trim()) return;
         this.showLoading();
+
         background.createContent(this.state.path, this.state.source, this.state.sha).then(res => {
             this.toast('保存成功', 'success');
             this.setState({
                 sha: res.data.content.sha
             })
             this.lastChanged = this.state.source.trim();
+            background.remove(this.state.path);
         }).catch(err => {
             this.toast(err.message, 'error');
         }).then(()=>{
             this.hideLoading();
         })
     }
-    onFileSelected(file){
-        this.setState({
-            path: file.path,
-            sha: file.sha,
-            open: false
-        });
-        let match = file.path.match(/\w*\.(\w+)$/)
-        this.ext = match?match[1].toLowerCase():null;
-        background.getContents(file.path, true).then(res => {
-            if(typeof res.data == 'object'){
-                let source = atob(res.data.content);
-                this.setState({info: null, source, result: '暂不支持此文件预览'});
-            }else if(this.ext == 'md'){
-                this.preHandleMD(res.data)
-            }else{
-                this.setState({source: res.data, result: res.data});
-            }
-        })
-    }
-    preHandleMD(data){
-        // let info = '';
-        // let source = data.replace(/^---((\s*.*\s*)*)---/, (match, p1) => {
-        //     info = p1;
-        //     return '';
-        // })
-        this.setState({source: data, result: Marken(data)});
-    }
-    handleUpdate(ev){
-        let result = this.ext == 'md' ? Marken(ev.value) : ev.value;
-        this.setState({source: ev.value, result})
-        if(!this.edited) this.edited = true;
-        this.cache(ev.value, ev.type == 'save')
-    }
-    cache(source, save){
-        if(save){
-            if(this.timerID){
-                clearTimeout(this.timerID);
-                this.timerID = null;
-            }
-            localStorage.setItem('TMP_ARTICLE_SOURCE', JSON.stringify({
-                ext: this.ext,
-                path: this.state.path,
-                sha: this.state.sha,
-                content: source
-            }))
-            return;
-        }
-        if(this.timerID){
-            clearTimeout(this.timerID);
-        }
-        this.timerID = setTimeout(() => {
-            this.timerID = null;
-            localStorage.setItem('TMP_ARTICLE_SOURCE', JSON.stringify({
-                ext: this.ext,
-                path: this.state.path,
-                sha: this.state.sha,
-                content: source
-            }))
-        }, this.autoSaveTime)
-    }
+
     showLoading(){
         this.setState({
             progress: <div className={this.props.classes.globalProgress}>
@@ -200,68 +256,94 @@ class PEDitor extends React.Component {
             progress: null
         })
     }
-    componentDidMount() {
-        let data = localStorage.getItem('TMP_ARTICLE_SOURCE')
-        if(data){
-            data = JSON.parse(data);
-            this.ext = data.ext;
-            this.setState({path: data.path, sha: data.sha})
-            this.preHandleMD(data.content)
-        }
-    }
+    toast(message, variant){
+        // variant could be success, error, warning or info
+        this.props.enqueueSnackbar(message, { variant });
+    };
 
     render() {
         const {classes} = this.props;
+        const {progress, showFiles, showDrawer, editorWidth, source, result, postsIndex} = this.state;
         return (
-            <React.Fragment>
+            <div className={classes.root}>
                 <CssBaseline />
-                <div className={classes.root}>
+                {progress}
+                {showFiles && <Files
+                    onCreate={this.onCreateFile.bind(this)}
+                    onSelect={this.onFileSelected.bind(this)}
+                    onCancel={this.onFileCanceled.bind(this)}
+                />}
+                <Drawer
+                    className={classes.drawer}
+                    anchor="left"
+                    variant={'temporary'}
+                    classes={{paper: classes.drawerPaper}}
+                    open={showDrawer}
+                >
+                    <Button onClick={this.showDrawer.bind(this)} color={'secondary'}>关闭</Button>
+                    <Typography className={classes.drawerHeader} classes={{root: classes.textColor}} variant={'body2'} align={'center'}>
+                        这里是存储在扩展中还没有同步到Github的文章
+                    </Typography>
+                    <Divider />
+                    <List>
+                        {postsIndex.map((posts, index) => (
+                            <ListItem button key={posts.path}
+                                onClick={this.onOpenLocalFile.bind(this, index)}
+                            >
+                                <ListItemText
+                                    primaryTypographyProps={{classes: {root: classes.textColor}}}
+                                    primary={posts.path} />
+                            </ListItem>
+                        ))}
+                    </List>
+                </Drawer>
+                <main className={classes.content}>
                     <EditorBar
                         className={classes.editorBar}
-                        path={this.state.path}
-                        upload={this.doCreateFile.bind(this)}
+                        local={this.showDrawer.bind(this)}
                         open={this.open.bind(this)}
+                        upload={this.upload.bind(this)}
                     />
-                    <div className={classes.editorWrapper}>
-                        <div className={classes.left} style={({width: this.state.editorWidth + 'px'})}>
-                            <TextEditor className={classes.editor} value={this.state.source} onUpdate={this.handleUpdate.bind(this)} />
-                        </div>
-                        <div id="resizable" className={classes.divider}></div>
-                        <div className={classes.right} dangerouslySetInnerHTML={{__html: this.state.result}}></div>
-                    </div>
-                </div>
 
-                <Dialog
-                    fullWidth
-                    maxWidth={'sm'}
-                    open={this.state.open}
-                    onClose={this.handleClose.bind(this)}
-                    aria-labelledby="fileSelector"
-                >
-                    <DialogTitle id="max-width-dialog-title">新建或打开文件</DialogTitle>
-                    <DialogContent>
-                        <Files
-                            onCreate={this.onCreateFile.bind(this)}
-                            onSelect={this.onFileSelected.bind(this)}
-                        ></Files>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={this.handleClose.bind(this)} color="primary">
-                            取消
-                        </Button>
-                    </DialogActions>
-                </Dialog>
-                {this.state.progress}
-            </React.Fragment>
+                    <div className={classes.editorWrapper}>
+                        <div className={classes.left} style={({width: editorWidth + 'px'})}>
+                            <TextEditor className={classes.editor} value={source} onKeyDown={this.handleKeyDown.bind(this)} onChange={this.handleUpdate.bind(this)} />
+                        </div>
+                        <div id="resizable" className={classes.divider} />
+                        <div className={classes.right + ' main-content'} dangerouslySetInnerHTML={{__html: result}} />
+                    </div>
+                </main>
+            </div>
         );
     }
 }
 
+let drawerWidth = 240;
 const styles = theme => ({
     root: {
-        height: '100vh', width: '100vw',
-        display: 'flex', flexDirection: 'column'
+        height: '100vh', width: '100vw'
     },
+    drawer: {
+        width: drawerWidth,
+        flexShrink: 0,
+    },
+    drawerPaper: {
+        width: drawerWidth,
+        backgroundColor: '#2e2e2e'
+    },
+    drawerHeader: {
+        padding: theme.spacing.unit
+    },
+    textColor: {color: '#b3b3b3'},
+
+    content: {
+        width: '100%', height: '100%',
+        display: 'flex', flexDirection: 'column',
+    },
+    listItem: {
+      fontSize: 50
+    },
+
     editorBar: {
         flex: '0 0 auto'
     },
@@ -299,4 +381,4 @@ const styles = theme => ({
     }
 })
 
-export default withSnackbar(withStyles(styles)(PEDitor));
+export default withSnackbar(withStyles(styles, { withTheme: true })(MDEditor));

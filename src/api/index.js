@@ -1,5 +1,6 @@
 import axios from 'axios';
 import Mock from './mock';
+import { Base64 } from 'js-base64';
 
 axios.defaults.baseURL = 'https://api.github.com';
 axios.defaults.headers.common['Accept'] = 'application/vnd.github.v3+json';
@@ -94,11 +95,11 @@ export async function getContents(path = '', isRaw = false) {
 
 export async function updateContents(path, content, sha) {
     return axios({
-        url: `repos/${axios.login}/${axios.repo}/contents/${path}`,
+        url: `repos/${axios.login}/${axios.repo}/contents${path}`,
         method: 'put',
         data: {
             message: axios.message,
-            content: btoa(content),
+            content: Base64.encode(content),
             branch: axios.branch,
             sha
         }

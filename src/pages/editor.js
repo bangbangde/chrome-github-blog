@@ -6,7 +6,7 @@ import Editor from '@/views/editor/index';
 window.background = chrome.extension.getBackgroundPage().actions;
 const container = document.createElement('div');
 const view = (
-    <SnackbarProvider maxSnack={3}>
+    <SnackbarProvider anchorOrigin={{ vertical: 'top', horizontal: 'center' }}  maxSnack={3}>
         <Editor></Editor>
     </SnackbarProvider>
 );

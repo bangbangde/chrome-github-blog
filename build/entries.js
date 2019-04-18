@@ -9,9 +9,13 @@ function entries () {
     pages.forEach(name => {
         entries[path.join(path.basename(name, '.js'))] = path.resolve('./src', 'pages', name);
     });
-    fs.readdirSync('src/content-js').forEach(name => {
-        entries[path.join(path.basename(name, '.js'))] = path.resolve('./src', 'content-js', name);
-    });
+    try {
+        fs.readdirSync('src/content-js').forEach(name => {
+            entries[path.join(path.basename(name, '.js'))] = path.resolve('./src', 'content-js', name);
+        });
+    }catch (e) {
+
+    }
     return entries;
 }
 

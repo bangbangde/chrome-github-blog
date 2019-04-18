@@ -40,11 +40,13 @@
     "@material-ui/core": "^3.9.3",
     "@material-ui/icons": "^3.0.2",
     "axios": "^0.18.0",
+    "js-base64": "^2.5.1",
     "lodash": "^4.17.11",
     "marked": "^0.6.2",
     "notistack": "^0.6.1",
     "rc-tree": "^1.15.2",
     "react": "^16.8.4",
-    "react-dom": "^16.8.4"
+    "react-dom": "^16.8.4",
+    "yaml": "^1.5.0"
   }
 }
