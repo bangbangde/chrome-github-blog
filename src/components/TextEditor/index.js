@@ -97,6 +97,10 @@ function TextEditor(props) {
 
     }
 
+    function handlePast(ev) {
+        console.log(ev.clipboardData.types)
+    }
+
     function onChangeListener() {
         props.onChange({
             type: 'onChange',
@@ -110,6 +114,7 @@ function TextEditor(props) {
                 // onKeyUp={handleKeyUp}
                 onChange={onChangeListener}
                 onKeyDown={handleKeyDown}
+                onPaste={handlePast}
                 value={props.value}
             ></textarea>
         </div>

@@ -1,37 +1,29 @@
 import React from "react";
-import { withStyles } from '@material-ui/core/styles';
+import {withStyles} from '@material-ui/core/styles';
 import EditorBar from './editor-bar';
 import Files from './files';
 import TextEditor from "@/components/TextEditor/index";
 import Marken from "marked";
 import CssBaseline from '@material-ui/core/CssBaseline';
-import {DateFormat} from "@/utils";
+import {DateFormat, pathJoin} from "@/utils";
 import CircularProgress from "@material-ui/core/CircularProgress";
-import yaml from "yaml";
-import { withSnackbar } from 'notistack';
-import AppBar from "@material-ui/core/AppBar";
+import {withSnackbar} from 'notistack';
 import Typography from "@material-ui/core/Typography";
-import Toolbar from "@material-ui/core/Toolbar";
 import Divider from "@material-ui/core/Divider";
 import List from "@material-ui/core/List";
 import ListItem from "@material-ui/core/ListItem";
 import ListItemIcon from "@material-ui/core/ListItemIcon";
 import ListItemText from "@material-ui/core/ListItemText";
 import Drawer from "@material-ui/core/Drawer";
-import classNames from 'classnames';
 import './style.css'
 import Button from "@material-ui/core/Button";
+import Dialog from "@material-ui/core/Dialog";
+import DialogTitle from "@material-ui/core/DialogTitle";
+import DialogContent from "@material-ui/core/DialogContent";
+import DialogContentText from "@material-ui/core/DialogContentText";
+import DialogActions from "@material-ui/core/DialogActions";
+import Delete from '@material-ui/icons/Delete';
 
-const defMeta =
-`---
-layout: post
-title: 'no title'
-subtitle: 副标题
-# categories: ['分类']
-tags: ['note']
-# cover: '头图'
----
-`
 function setListener() {
     let handleMouseMove = ev => {
         this.setState({editorWidth: ev.pageX});
@@ -65,7 +57,6 @@ function setListener() {
         }
     })
 }
-
 function parse(data) {
     // TODO:// 检查正则表达式，运行就卡死
     // let source = data.replace(/^---((\s+.*)*)\s---/, (match, p1) => {
@@ -78,12 +69,14 @@ function parse(data) {
     }
     return Marken(data)
 }
+
 class MDEditor extends React.Component {
     constructor(props){
         super(props);
         this.state = {
             showFiles: false,
             showDrawer: false,
+            showAlert: false,
 
             editorWidth: document.body.offsetWidth * background.width,
             editorWidthPercent: background.width,
@@ -112,10 +105,12 @@ class MDEditor extends React.Component {
     }
 
     loadData(data){
+        let date = DateFormat('yyyy-MM-dd')
+        let defMeta = `---\nlayout: post\ntitle: ${date}\nsubtitle:\ndate: ${date}\ntags: ['随笔']\n# categories:\n# cover:\n---\n`;
         if(!data){ // 默认新文章
             data = {
                 source: defMeta,
-                path: background.path + '/' + DateFormat("yyyy-MM-dd-HHmmss.'md'")
+                path: pathJoin(background.path, DateFormat("yyyy-MM-dd-HHmmss.'md'"))
             }
         }else if(!data.source){ // 新建文章
             data.source = defMeta;
@@ -123,18 +118,13 @@ class MDEditor extends React.Component {
         data.result = parse(data.source);
         this.setState(data);
     }
-
     onCreateFile(path){
         this.setState({showFiles: false})
         this.loadData({path});
     }
-
     onFileSelected(file){
         this.setState({showFiles: false});
-        // if(file.path.substr(-2).toLowerCase() != 'md'){
-        //     this.toast('sorry, 我只编辑 Markdown 文件', 'warning')
-        //     return;
-        // }
+        if(this.post && this.post.path == file.path) return;
         let index = this.state.postsIndex.findIndex(item => item.path == file.path)
         if(index != -1){
             this.post = this.state.postsIndex[index];
@@ -165,6 +155,7 @@ class MDEditor extends React.Component {
         }
     }
     onOpenLocalFile(index){
+        if(this.state.index == index) return;
         this.post = this.state.postsIndex[index];
         background.get(this.post.path).then(res => {
             this.loadData({
@@ -212,11 +203,9 @@ class MDEditor extends React.Component {
             background.save({postsIndex});
         })
     }
-
     onFileCanceled(){
         this.setState({showFiles: false})
     }
-
     showDrawer(){
         this.setState({showDrawer: !this.state.showDrawer});
     }
@@ -225,9 +214,32 @@ class MDEditor extends React.Component {
             showFiles: true
         })
     }
-
     upload(){
-        if(this.lastChanged && this.lastChanged == this.state.source.trim()) return;
+        this.setState({
+            showAlert: true
+        })
+    }
+    handleClose(field){
+        this.setState({
+            [field]: false
+        })
+    }
+    deletePostCache(index){
+        if(index == this.state.index){
+            this.loadData()
+        }
+        let path = this.state.postsIndex.splice(index, 1)[0].path;
+        this.setState({postsIndex: this.state.postsIndex})
+        background.save({
+            postsIndex: this.state.postsIndex
+        })
+        background.remove(path);
+        event.preventDefault();
+    }
+    uploadConfirm(){
+        this.setState({
+            showAlert: false
+        })
         this.showLoading();
 
         background.createContent(this.state.path, this.state.source, this.state.sha).then(res => {
@@ -235,15 +247,18 @@ class MDEditor extends React.Component {
             this.setState({
                 sha: res.data.content.sha
             })
-            this.lastChanged = this.state.source.trim();
+
+            this.state.postsIndex.splice(this.state.index, 1);
+            this.setState({postsIndex: this.state.postsIndex})
+            background.save({postsIndex: this.state.postsIndex})
             background.remove(this.state.path);
+            this.loadData();
         }).catch(err => {
             this.toast(err.message, 'error');
         }).then(()=>{
             this.hideLoading();
         })
     }
-
     showLoading(){
         this.setState({
             progress: <div className={this.props.classes.globalProgress}>
@@ -260,68 +275,98 @@ class MDEditor extends React.Component {
         // variant could be success, error, warning or info
         this.props.enqueueSnackbar(message, { variant });
     };
-
     render() {
         const {classes} = this.props;
         const {progress, showFiles, showDrawer, editorWidth, source, result, postsIndex} = this.state;
         return (
-            <div className={classes.root}>
-                <CssBaseline />
-                {progress}
-                {showFiles && <Files
-                    onCreate={this.onCreateFile.bind(this)}
-                    onSelect={this.onFileSelected.bind(this)}
-                    onCancel={this.onFileCanceled.bind(this)}
-                />}
-                <Drawer
-                    className={classes.drawer}
-                    anchor="left"
-                    variant={'temporary'}
-                    classes={{paper: classes.drawerPaper}}
-                    open={showDrawer}
-                >
-                    <Button onClick={this.showDrawer.bind(this)} color={'secondary'}>关闭</Button>
-                    <Typography className={classes.drawerHeader} classes={{root: classes.textColor}} variant={'body2'} align={'center'}>
-                        这里是存储在扩展中还没有同步到Github的文章
-                    </Typography>
-                    <Divider />
-                    <List>
-                        {postsIndex.map((posts, index) => (
-                            <ListItem button key={posts.path}
-                                onClick={this.onOpenLocalFile.bind(this, index)}
-                            >
-                                <ListItemText
-                                    primaryTypographyProps={{classes: {root: classes.textColor}}}
-                                    primary={posts.path} />
-                            </ListItem>
-                        ))}
-                    </List>
-                </Drawer>
-                <main className={classes.content}>
-                    <EditorBar
-                        className={classes.editorBar}
-                        local={this.showDrawer.bind(this)}
-                        open={this.open.bind(this)}
-                        upload={this.upload.bind(this)}
-                    />
+            <React.Fragment>
+                <div className={classes.root}>
+                    <CssBaseline />
+                    {progress}
+                    {showFiles && <Files
+                        onCreate={this.onCreateFile.bind(this)}
+                        onSelect={this.onFileSelected.bind(this)}
+                        onCancel={this.onFileCanceled.bind(this)}
+                        path={this.state.path}
+                        toast={this.toast.bind(this)}
+                    />}
+                    <Drawer
+                        className={classes.drawer}
+                        anchor="left"
+                        variant={'temporary'}
+                        classes={{paper: classes.drawerPaper}}
+                        open={showDrawer}
+                        onClose={this.showDrawer.bind(this)}
+                    >
+                        <Button onClick={this.showDrawer.bind(this)} color={'secondary'}>关闭</Button>
+                        <Typography className={classes.drawerHeader} classes={{root: classes.textColor}} variant={'body2'} align={'center'}>
+                            这里是存储在扩展中还没有同步到Github的文章
+                        </Typography>
+                        <Divider />
+                        <List>
+                            {postsIndex.map((posts, index) => (
+                                <ListItem button key={posts.path}
+                                          onClick={this.onOpenLocalFile.bind(this, index)}
+                                >
+                                    <ListItemIcon onClick={this.deletePostCache.bind(this, index)}>{<Delete className={classes.iconDelete}></Delete>}</ListItemIcon>
+                                    <ListItemText
+                                        primaryTypographyProps={{classes: {root: classes.textColor}}}
+                                        primary={posts.path} />
+                                </ListItem>
+                            ))}
+                        </List>
+                    </Drawer>
+                    <main className={classes.content}>
+                        <EditorBar
+                            className={classes.editorBar}
+                            localNew={()=>this.loadData()}
+                            local={this.showDrawer.bind(this)}
+                            open={this.open.bind(this)}
+                            upload={this.upload.bind(this)}
+                        />
 
-                    <div className={classes.editorWrapper}>
-                        <div className={classes.left} style={({width: editorWidth + 'px'})}>
-                            <TextEditor className={classes.editor} value={source} onKeyDown={this.handleKeyDown.bind(this)} onChange={this.handleUpdate.bind(this)} />
+                        <div className={classes.editorWrapper}>
+                            <div className={classes.left} style={({width: editorWidth + 'px'})}>
+                                <TextEditor className={classes.editor} value={source} onKeyDown={this.handleKeyDown.bind(this)} onChange={this.handleUpdate.bind(this)} />
+                            </div>
+                            <div id="resizable" className={classes.divider} />
+                            <div className={classes.right + ' main-content'} dangerouslySetInnerHTML={{__html: result}} />
                         </div>
-                        <div id="resizable" className={classes.divider} />
-                        <div className={classes.right + ' main-content'} dangerouslySetInnerHTML={{__html: result}} />
-                    </div>
-                </main>
-            </div>
+                    </main>
+                    <div className={classes.path}>{this.state.path}</div>
+                </div>
+
+                <Dialog
+                    open={this.state.showAlert}
+                >
+                    <DialogTitle>{"提交到 GitHub?"}</DialogTitle>
+                    <DialogContent>
+                        <DialogContentText>
+                            提交当前文件到 Github，同时会删除本地缓存
+                        </DialogContentText>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={this.handleClose.bind(this, 'showAlert')} color="primary">
+                            取消
+                        </Button>
+                        <Button onClick={this.uploadConfirm.bind(this)} color="primary" autoFocus>
+                            确定
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+            </React.Fragment>
         );
     }
 }
 
-let drawerWidth = 240;
+let drawerWidth = 320;
 const styles = theme => ({
     root: {
         height: '100vh', width: '100vw'
+    },
+    path: {
+        position: 'absolute', padding: '2px 8px',
+        left: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,.2)', color: '#b3b3b3'
     },
     drawer: {
         width: drawerWidth,
@@ -378,6 +423,9 @@ const styles = theme => ({
     globalProgress: {
         position: 'fixed', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: 'rgba(0,0,0,.6)',
         display: 'flex', justifyContent: 'center', alignItems: 'center'
+    },
+    iconDelete: {
+        color: theme.palette.secondary.main
     }
 })
 

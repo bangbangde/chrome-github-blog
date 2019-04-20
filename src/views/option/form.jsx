@@ -91,7 +91,6 @@ class Config extends React.Component {
                 ['path', '请填写合法路径']
             ]
         }).setHandler(error => {
-            console.log(error)
             this.setState({error})
         })
     }
@@ -108,6 +107,7 @@ class Config extends React.Component {
 
     submit(){
         let args = ['repo', 'branch', 'path'];
+        console.log('before submit', this.state)
         if(this.validate.valid(this.state)){
             this.props.onSubmit(background.setRepo(this.state.repo, this.state.branch, this.state.path));
         }

@@ -73,9 +73,13 @@ class Option extends React.Component {
 
     onFormSubmit(pm){
         this.showLoading();
-        pm.then(() => {
+        pm.then(res => {
             this.hideLoading();
-            this.toast('信息已保存', 'success')
+            if(res.success){
+                this.toast('信息已保存', 'success')
+            }else{
+                this.toast(res.message, 'error')
+            }
         }).catch( e => {
             this.hideLoading();
             this.toast(e.message, 'warn');

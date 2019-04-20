@@ -48,9 +48,10 @@ module.exports = {
 	optimization: {
 		runtimeChunk: 'single',
 		splitChunks: {
-			chunks: "all",
+			// chunks: "all",
 			cacheGroups: {
 				vendors: {
+					chunks: "all",
 					test: /[\\/]node_modules[\\/]/,
 					name: 'vendors',
 					reuseExistingChunk: true

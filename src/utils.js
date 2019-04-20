@@ -158,6 +158,11 @@ function DateFormat(date, pattern) {
 
   return _p
 }
+
+function pathJoin(...paths) {
+  return paths.map(path => path.replace(/(^\/)|(\/$)/g, ''))
+      .filter(i => i!='').join('/')
+}
 export {
-  promisify, Store, DateFormat
+  promisify, Store, DateFormat, pathJoin
 }

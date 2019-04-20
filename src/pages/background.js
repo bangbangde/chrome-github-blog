@@ -19,7 +19,9 @@ import * as Api from '@/api';
 
 		postsIndex: null,  // @type Set 缓存文章索引
 
-		editorWidthPercent: 0.5
+		editorWidthPercent: 0.5,
+
+		validated: false,
 
 		// TODO:
 		// categories: ['笔记', '随笔', '前端'],
@@ -61,12 +63,7 @@ import * as Api from '@/api';
 	async function dev(){
 		let info = await promisify(chrome.management.getSelf)();
 		if(info.installType == 'development'){
-			// await Store.set({
-			// 	token: '',
-			// 	login: 'CQByte',
-			// 	repo: 'CQByte.github.io'
-			// });
-			console.log(data)
+			console.log(data);
 			Store.log();
 		}
 	}
@@ -92,6 +89,7 @@ import * as Api from '@/api';
 
 		// 通过访问仓库检测配置是否有效
 		let repo = await Api.getContents();
+		data.validated = repo.success;
 		return repo;
 	}
 
@@ -170,28 +168,10 @@ import * as Api from '@/api';
 	 */
 	async function setRepo(repo, branch, path){
 		let valid = await Api.getBranches(repo, branch);
-		if(valid.success){
-
-			await Store.set({repo, branch, path});
-		}
+		data.validated = valid.success;
+		if(valid.success){ await Store.set({repo, branch, path}); }
 		return valid;
 	}
-
-	check().catch( e => {
-		return {success: false, message: e.message}
-	}).then(res => {
-		chrome.browserAction.onClicked.addListener(() => {
-			if(res.success){
-				chrome.tabs.create({
-					url: 'editor.html'
-				})
-			}else{
-				chrome.runtime.openOptionsPage();
-				console.warn(res.message)
-			}
-		});
-		console.log('extension is ready');
-	});
 
 	const Background = {
 		doLogin,
@@ -213,4 +193,25 @@ import * as Api from '@/api';
 	}
 
 	window.actions = Background;
+
+	chrome.browserAction.onClicked.addListener(() => {
+		console.log(data.validated)
+		if(data.validated){
+			chrome.tabs.create({
+				url: 'editor.html'
+			})
+		}else{
+			chrome.runtime.openOptionsPage();
+		}
+	});
+
+	check().catch(err => {
+		console.log(err);
+	}).then(()=>{
+		chrome.browserAction.setPopup({popup: ''});
+	})
+
+	chrome.tabs.onActivated.addListener(e=> {
+		console.log(e.id)
+	})
 }();

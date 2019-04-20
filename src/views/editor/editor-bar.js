@@ -6,6 +6,7 @@ import CloudUpload from '@material-ui/icons/CloudUploadOutlined';
 import FolderOpen from '@material-ui/icons/FolderOpen';
 import Laptop from '@material-ui/icons/Laptop';
 import Tooltip from "@material-ui/core/Tooltip";
+import FiberNew from '@material-ui/icons/FiberNew';
 
 class EditorBar extends React.Component {
     constructor(props){
@@ -18,6 +19,9 @@ class EditorBar extends React.Component {
         return (
             <div className={classes.root}>
                 <div className={classes.group}>
+                    <Tooltip title="新建文章" aria-label="Add">
+                        <FiberNew onClick={this.props.localNew} className={classes.icon}></FiberNew>
+                    </Tooltip>
                     <Tooltip title="本地缓存" aria-label="Add">
                         <Laptop onClick={this.props.local} className={classes.icon}></Laptop>
                     </Tooltip>

@@ -69,7 +69,7 @@ export async function getRepositories() {
 
 export async function getBranches(repo, branch = '') {
     return axios({
-        url: `/repos/${axios.login}/${axios.repo}/branches/${branch}`,
+        url: `/repos/${axios.login}/${repo}/branches/${branch}`,
         method: 'get'
     });
 }
@@ -95,7 +95,7 @@ export async function getContents(path = '', isRaw = false) {
 
 export async function updateContents(path, content, sha) {
     return axios({
-        url: `repos/${axios.login}/${axios.repo}/contents${path}`,
+        url: `repos/${axios.login}/${axios.repo}/contents/${path}`,
         method: 'put',
         data: {
             message: axios.message,

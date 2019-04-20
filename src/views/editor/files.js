@@ -12,17 +12,20 @@ import DialogTitle from "@material-ui/core/DialogTitle";
 import DialogContent from "@material-ui/core/DialogContent";
 import DialogActions from "@material-ui/core/DialogActions";
 import Dialog from "@material-ui/core/Dialog";
+import {DateFormat, pathJoin} from "@/utils.js";
 
 class Files extends React.Component {
     constructor(props){
         super(props);
         let root = background.repo;
+        let paths = props.path.split('/')
+        paths.pop();
         this.state = {
             root,
-            path: '',
-            newFileName: '',
+            path: paths.join('/'),
+            newFileName: DateFormat('yyyy-MM-dd-'),
             netErr: '',
-            paths: []
+            paths: paths
         };
         this.loading = false;
         this.getContents = (path, isRaw) => {
@@ -48,21 +51,30 @@ class Files extends React.Component {
             })
         };
     }
-    // if(name){
-    //     if(!/^\d{4}-\d{2}-\d{2}/.test(path)){
-    //         name = DateFormat("yyyy-MM-dd-") + name;
-    //     }
-    // }else{
-    //     name = DateFormat("yyyy-MM-dd-HHmmss.'md'")
-    // }
+
     handleChange(){
         this.setState({newFileName: event.target.value})
     }
+
     onBtnCreateClickListener(){
-        this.props.onCreate(this.state.path, this.state.newFileName)
+        let {newFileName, path} = this.state;
+        if(newFileName){
+            if(!/^\d{4}-\d{2}-\d{2}/.test(newFileName) && path.substr(-6) == '_posts'){
+                this.props.toast('文件名称必须是 yyyy-MM-dd-name 的格式', 'warning')
+                return;
+            }
+        }else{
+            newFileName = DateFormat("yyyy-MM-dd-HHmmss")
+        }
+        console.log(path, newFileName, pathJoin(path, newFileName))
+        this.props.onCreate(pathJoin(path, newFileName+'.md'))
     }
     onFileSelectedListener(node){
         if(node && node.type == 'file'){
+            if(node.name.substr(-2).toLowerCase() != 'md'){
+                this.props.toast('我只编辑 Markdown 文档！', 'info')
+                return;
+            }
             this.props.onSelect(node)
         }else{
             this.setState({
@@ -90,7 +102,7 @@ class Files extends React.Component {
     }
 
     render() {
-        const { classes } = this.props;
+        const { classes, path } = this.props;
         let iconDirectory = <svg aria-label="directory" className={classes.icon} viewBox="0 0 14 16" version="1.1" width="14" height="16" role="img"><path fillRule="evenodd" d="M13 4H7V3c0-.66-.31-1-1-1H1c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1V5c0-.55-.45-1-1-1zM6 4H1V3h5v1z"></path></svg>;
         let iconFile = <svg aria-label="file" className={classes.icon} viewBox="0 0 12 16" version="1.1" width="12" height="16" role="img"><path fillRule="evenodd" d="M6 5H2V4h4v1zM2 8h7V7H2v1zm0 2h7V9H2v1zm0 2h7v-1H2v1zm10-7.5V14c0 .55-.45 1-1 1H1c-.55 0-1-.45-1-1V2c0-.55.45-1 1-1h7.5L12 4.5zM11 5L8 2H1v12h10V5z"></path></svg>;
 
@@ -170,11 +182,12 @@ class Files extends React.Component {
                             {genPath()}
                             <TextField
                                 className={classes.inputName}
-                                onChange={this.onLinkClickListener.bind(this)}
+                                onChange={this.handleChange.bind(this)}
                                 type="text"
                                 value={this.state.newFileName}
-                                placeholder={'yyyy-MM-ddHHmmss.md'}
+                                placeholder={'yyyy-MM-dd-name'}
                             />
+                            <span>.md</span>
                             <Button
                                 className={classes.btnNew}
                                 onClick={this.onBtnCreateClickListener.bind(this)}
