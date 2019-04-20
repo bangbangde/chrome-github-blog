@@ -1,5 +1,6 @@
 import React from "react";
 import "./index.css"
+import {uuid, pathJoin} from "@/utils";
 
 // 功能键
 const KEYS = {
@@ -41,24 +42,9 @@ const testCompKey = (keys, key) => {
     return event.key.toLowerCase() == key;
 }
 
-
-
-
 function TextEditor(props) {
     let tabSize = props.tabSize || 2;
 
-    /**
-     type keydown
-     key s
-     ctrlKey false
-     shiftKey false
-     altKey false
-     metaKey true
-     repeat false
-     charCode 0
-     keyCode 83
-     which 83
-     */
     function handleKeyDown(ev) {
         if(ev.key == 'Tab'){
             let selectionStart = ev.target.selectionStart;
@@ -67,6 +53,7 @@ function TextEditor(props) {
             ev.target.value = start + Array(tabSize).fill(' ').join('') + end;
             ev.target.selectionStart = ev.target.selectionEnd = selectionStart+tabSize;
             ev.preventDefault();
+            return;
         }
 
         // 自定义组合键
@@ -76,6 +63,7 @@ function TextEditor(props) {
                 value: event.target.value
             })
             ev.preventDefault();
+            return;
         }
 
         // Force save Meta+Shift+s | Ctrl+Shift+s
@@ -85,6 +73,7 @@ function TextEditor(props) {
                 value: event.target.value
             })
             ev.preventDefault();
+            return;
         }
         // Cut line
         if(testCompKey([[KEYS.CTRL, KEYS.META]], 'x')){
@@ -93,19 +82,46 @@ function TextEditor(props) {
                 value: ''
             })
             ev.preventDefault();
+            return;
         }
 
     }
 
     function handlePast(ev) {
-        console.log(ev.clipboardData.types)
+        let file = event.clipboardData.files[0];
+        if(!file) return;
+        let name = uuid(8, 62) + file.name;
+
+        // 上传图片并插入编辑器
+        if(/^image\//.test(file.type)){
+            let url = 'assets/images'
+            let path = pathJoin(url, name)
+            let imgStr = `![${name}](${path})`;
+
+            let selectionStart = ev.target.selectionStart;
+            let start = ev.target.value.substring(0, selectionStart)
+            let end = ev.target.value.substr(ev.target.selectionEnd)
+            let newStr = `${imgStr}\n` + end;
+            ev.target.value = start + newStr;
+            ev.target.selectionStart = ev.target.selectionEnd = selectionStart+newStr.length;
+
+            props.onImageUploadState(path, 0);
+            props.onChange(ev.target.value);
+            background.uploadFiles(path, file).then(res => {
+                if(res.success){
+                    props.onImageUploadState(path, 1);
+                }else{
+                    props.onImageUploadState(path, 2, res.message);
+                }
+            }, err => {
+                props.onImageUploadState(path, 2, err.message);
+            })
+        }
+        event.preventDefault();
     }
 
     function onChangeListener() {
-        props.onChange({
-            type: 'onChange',
-            value: event.target.value
-        })
+        props.onChange(event.target.value);
     }
     const view = (
         <div className={props.className + ' wrapper-editor'}>

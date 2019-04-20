@@ -106,4 +106,28 @@ export async function updateContents(path, content, sha) {
     });
 }
 
+export async function uploadFiles(path, file) {
+    return new Promise((resolve, reject) => {
+        let reader = new FileReader();
+        reader.readAsBinaryString(file);
+        reader.onloadend = function(ev) {
+            if(ev.target.error){
+                reject(ev.target.error)
+            }else{
+                resolve(btoa(ev.target.result))
+            }
+        };
+    }).then(content => {
+        return axios({
+            url: `repos/${axios.login}/${axios.repo}/contents/${path}`,
+            method: 'put',
+            data: {
+                message: axios.message,
+                content,
+                branch: axios.branch,
+            }
+        });
+    })
+}
+
 export {axios}

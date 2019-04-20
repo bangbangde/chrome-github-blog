@@ -3,7 +3,7 @@ import {withStyles} from '@material-ui/core/styles';
 import EditorBar from './editor-bar';
 import Files from './files';
 import TextEditor from "@/components/TextEditor/index";
-import Marken from "marked";
+import Marked from "marked";
 import CssBaseline from '@material-ui/core/CssBaseline';
 import {DateFormat, pathJoin} from "@/utils";
 import CircularProgress from "@material-ui/core/CircularProgress";
@@ -57,18 +57,6 @@ function setListener() {
         }
     })
 }
-function parse(data) {
-    // TODO:// 检查正则表达式，运行就卡死
-    // let source = data.replace(/^---((\s+.*)*)\s---/, (match, p1) => {
-    //     info = p1;
-    //     return '';
-    // })
-    let index = data.indexOf('---', 3);
-    if(index){
-        return Marken(data.substr(index+3))
-    }
-    return Marken(data)
-}
 
 class MDEditor extends React.Component {
     constructor(props){
@@ -97,7 +85,65 @@ class MDEditor extends React.Component {
          * @type { path: string,sha:string,lastModified:string }
          */
         this.post = null; // 指向 postsIndexList 成员
+
+        const imgErrs = {};
+        /**
+         *
+         * @param path   图片相对路径
+         * @param state  上传状态：0 正在上传 1 上传成功 2 上传失败
+         * @param errMsg
+         */
+        this.handleImageUpload = function (path, state, errMsg) {
+            console.log(path, state, errMsg)
+            switch (state) {
+                case 0: imgErrs[path] = true; break;
+                case 1: delete imgErrs[path];break;
+                case 2: imgErrs[path] = errMsg;break;
+            }
+            if(state){
+                this.parse(this.state.source);
+            }
+        }
+        this.renderer = new Marked.Renderer();
+        this.renderer.image = function(href, title, text){
+            if (href === null) {
+                return text;
+            }
+            if(imgErrs[href]){
+                if(imgErrs[href] === true){
+                    return `<span class="ext-img_upload_loading">${text}上传中...</span>`
+                }else{
+                    return `<span class="ext-img_upload_err">${text}上传失败, 请重试</span>`
+                }
+            }
+            if(!href.startsWith('http')){
+                href = pathJoin(this.options.baseUrl, href)
+            }
+            var out = '<img src="' + href + '" alt="' + text + '"';
+            if (title) {
+                out += ' title="' + title + '"';
+            }
+            out += this.options.xhtml ? '/>' : '>';
+            return out;
+        }
+        Marked.setOptions({
+            baseUrl: background.baseUrl
+        })
     }
+
+    parse(data) {
+        // TODO:// 检查正则表达式，运行就卡死
+        // let source = data.replace(/^---((\s+.*)*)\s---/, (match, p1) => {
+        //     info = p1;
+        //     return '';
+        // })
+        let index = data.indexOf('---', 3);
+        if(index){
+            return Marked(data.substr(index+3), {renderer: this.renderer})
+        }
+        return Marked(data, {renderer: this.renderer})
+    }
+
     componentWillMount() {
         setListener.bind(this)();
         this.loadData();
@@ -106,7 +152,7 @@ class MDEditor extends React.Component {
 
     loadData(data){
         let date = DateFormat('yyyy-MM-dd')
-        let defMeta = `---\nlayout: post\ntitle: ${date}\nsubtitle:\ndate: ${date}\ntags: ['随笔']\n# categories:\n# cover:\n---\n`;
+        let defMeta = `---\nlayout: post\ntitle: ${date}\nsubtitle:\ndate: ${date}\ntags: ['note']\n---\n`;
         if(!data){ // 默认新文章
             data = {
                 source: defMeta,
@@ -115,7 +161,7 @@ class MDEditor extends React.Component {
         }else if(!data.source){ // 新建文章
             data.source = defMeta;
         }
-        data.result = parse(data.source);
+        data.result = this.parse(data.source);
         this.setState(data);
     }
     onCreateFile(path){
@@ -166,9 +212,9 @@ class MDEditor extends React.Component {
             })
         });
     }
-    handleUpdate(ev){
-        this.setState({source: ev.value, result: parse(ev.value)})
-        this.cache(ev.value)
+    handleUpdate(value){
+        this.setState({source: value, result: this.parse(value)})
+        this.cache(value)
     }
     handleKeyDown(ev){
         switch (ev.type) {
@@ -327,7 +373,13 @@ class MDEditor extends React.Component {
 
                         <div className={classes.editorWrapper}>
                             <div className={classes.left} style={({width: editorWidth + 'px'})}>
-                                <TextEditor className={classes.editor} value={source} onKeyDown={this.handleKeyDown.bind(this)} onChange={this.handleUpdate.bind(this)} />
+                                <TextEditor
+                                    className={classes.editor}
+                                    value={source}
+                                    onKeyDown={this.handleKeyDown.bind(this)}
+                                    onChange={this.handleUpdate.bind(this)}
+                                    onImageUploadState={this.handleImageUpload.bind(this)}
+                                />
                             </div>
                             <div id="resizable" className={classes.divider} />
                             <div className={classes.right + ' main-content'} dangerouslySetInnerHTML={{__html: result}} />

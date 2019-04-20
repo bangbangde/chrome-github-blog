@@ -24,6 +24,7 @@ function htmlPlugins() {
         name = path.basename(name, '.js');
         let param = {
             filename: name + '.html',
+            title: 'BlogPage',
             // favicon: '',
             meta: {
                 viewport: 'minimum-scale=1, initial-scale=1, width=device-width, shrink-to-fit=no'

@@ -14,8 +14,9 @@ import * as Api from '@/api';
 
 		repo: undefined,                       // *required
 		branch: 'master',                      // "master" | "gh-pages"
-		path: '/_posts',                             // "/" | "/docs/_posts" | "/_posts"
+		path: '/_posts',                       // "/" | "/docs/_posts" | "/_posts"
 		message: 'by chrome extension',
+		baseUrl: undefined,
 
 		postsIndex: null,  // @type Set 缓存文章索引
 
@@ -173,6 +174,10 @@ import * as Api from '@/api';
 		return valid;
 	}
 
+	function uploadFiles(path, file) {
+		return Api.uploadFiles(path, file)
+	}
+
 	const Background = {
 		doLogin,
 		setRepo,
@@ -180,6 +185,7 @@ import * as Api from '@/api';
 		createContent,
 		checkConfig,
 		validToken,
+		uploadFiles,
 		save: Store.set,
 		get: Store.get,
 		remove: Store.remove,
@@ -189,7 +195,8 @@ import * as Api from '@/api';
 		get repo(){ return data.repo; },
 		get branch(){ return data.branch; },
 		get path(){ return data.path; },
-		get width(){ return data.editorWidthPercent; }
+		get width(){ return data.editorWidthPercent; },
+		get baseUrl(){ return data.baseUrl || 'https://' + data.repo; }
 	}
 
 	window.actions = Background;
