@@ -2,9 +2,6 @@ import {promisify, Store} from '../utils';
 import * as Api from '@/api';
 
 !function() {
-	/**
-	 *  Storage data
-	 */
 	const data = {
 		name: undefined,
 		login: undefined,
@@ -18,7 +15,7 @@ import * as Api from '@/api';
 		message: 'by chrome extension',
 		baseUrl: undefined,
 
-		postsIndex: null,  // @type Set 缓存文章索引
+		postsIndex: null,                      // @type array 缓存文章索引
 
 		editorWidthPercent: 0.5,
 

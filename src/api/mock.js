@@ -6,14 +6,6 @@ const mock = {
     //         status: 200,
     //         data: []
     //     })
-    // }),
-    // 'post /authorizations': config => new Promise(resolve => {
-    //     resolve({
-    //         status: 201,
-    //         data: {
-    //             token: ''
-    //         }
-    //     })
     // })
 }
 

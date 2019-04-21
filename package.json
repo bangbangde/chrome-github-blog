@@ -1,7 +1,7 @@
 {
   "name": "chrome-github-blog",
-  "version": "1.0.0",
-  "description": "",
+  "version": "0.0.1",
+  "description": "在 Chrome 中编写博客并推送到 github pages。",
   "private": true,
   "scripts": {
     "build": "webpack",
@@ -14,7 +14,7 @@
     "markdown",
     "github pages"
   ],
-  "author": "zhaochengqi",
+  "author": "bangabngde",
   "license": "ISC",
   "devDependencies": {
     "@babel/cli": "^7.1.0",
