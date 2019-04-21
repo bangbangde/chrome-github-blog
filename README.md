@@ -10,6 +10,14 @@ TODO:
 
 预览：
 
+```
+npm install
+```
+```
+npm build
+```
+chrome 扩展管理中加载 `dist` 目录
+
 ![auth](https://github.com/bangbangde/chrome-github-blog/blob/master/screenShots/20190420-160829.png)
 
 ![repo](https://github.com/bangbangde/chrome-github-blog/blob/master/screenShots/20190420-160909.png)
