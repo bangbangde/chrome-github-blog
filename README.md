@@ -2,7 +2,8 @@
 
 正在努力 coding... 喜欢的小伙伴给颗Star🌟吧
 
-另外，非常希望有感兴趣的朋友愿意加入和我一起快乐打码
+另外，非常希望有感兴趣的朋友愿意加入和我一起快乐打码,
+因为要开始忙着找工作，近期没有大段时间来写了:disappointed:
 
 技术栈: `chrome extension` `react` `material-ui` `axios` `webpack`
 
