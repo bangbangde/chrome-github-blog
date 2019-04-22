@@ -1,8 +1,10 @@
-在 Chrome 中编写博客并推送到 github pages:100:
+在 Chrome 中编写博客并推送到 github pages💯
 
-正在努力 coding...
+正在努力 coding... 喜欢的小伙伴给颗Star🌟吧
 
-喜欢的小伙伴给颗Star:star2:吧
+另外，非常希望有感兴趣的朋友愿意加入和我一起快乐打码
+
+技术栈: `chrome extension` `react` `material-ui` `axios` `webpack`
 
 当前进度：
 
@@ -13,8 +15,9 @@
 - [x] 实时本地缓存
 - [x] 粘贴图片自动上传
 - [ ] inject script 抓取掘金/简书编辑器内容
-- [ ] 开放用户自定义抓取
-- [ ] 系统测试
+- [ ] 完善编辑器功能
+- [ ] 开放用户自定义抓取文章脚本
+- [ ] 测试
 - [ ] 皮肤定制
 - [ ] 发布
 
