@@ -1,11 +1,13 @@
 在 Chrome 中编写博客并推送到 github pages💯
 
-正在努力 coding... 喜欢的小伙伴给颗Star🌟吧
+正在努力 coding...
 
-另外，非常希望有感兴趣的朋友愿意加入和我一起快乐打码,
+非常希望有感兴趣的朋友愿意加入和我一起快乐打码,
 因为要开始忙着找工作，近期没有大段时间来写了:disappointed:
 
 技术栈: `chrome extension` `react` `material-ui` `axios` `webpack`
+
+另外，喜欢的小伙伴给颗Star🌟吧
 
 当前进度：
 
@@ -15,7 +17,6 @@
 - [x] 浏览 Github 仓库文件
 - [x] 实时本地缓存
 - [x] 粘贴图片自动上传
-- [ ] inject script 抓取掘金/简书编辑器内容
 - [ ] 完善编辑器功能
 - [ ] 开放用户自定义抓取文章脚本
 - [ ] 测试
