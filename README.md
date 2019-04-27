@@ -35,3 +35,7 @@
 ![repo](https://github.com/bangbangde/chrome-github-blog/blob/master/screenShots/20190420-160909.png)
 
 ![write](https://github.com/bangbangde/chrome-github-blog/blob/master/screenShots/20190420-161014.png)
+
+![select](https://github.com/bangbangde/chrome-github-blog/blob/master/screenShots/select.png)
+
+![cache](https://github.com/bangbangde/chrome-github-blog/blob/master/screenShots/cache.png)
